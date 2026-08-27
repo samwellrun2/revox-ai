@@ -61,27 +61,22 @@ const steps = [
     title: "Get your dubbed video",
     description: "Download your video with the original voice speaking a new language.",
     visual: (
-      <div className="mt-5 rounded-xl bg-gray-50 p-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-3 space-y-3">
-          <div className="flex items-center gap-2">
-            {["Transcribe", "Translate", "Clone", "Merge"].map((s, i) => (
-              <div key={s} className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-                  <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </div>
-                <span className="text-[9px] text-gray-500">{s}</span>
-                {i < 3 && <div className="w-3 h-px bg-gray-200" />}
-              </div>
-            ))}
+      <div className="mt-5 rounded-xl bg-gray-50 p-4 space-y-2.5">
+        {["Transcribe", "Translate", "Clone voice", "Merge video"].map((s) => (
+          <div key={s} className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white">
+            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            </div>
+            <span className="text-xs text-gray-600">{s}</span>
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 bg-brand-primary rounded-lg">
-            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-            <span className="text-[10px] text-white font-medium">Download translated video</span>
-          </div>
+        ))}
+        <div className="flex items-center justify-center gap-2 px-3 py-2.5 bg-brand-primary rounded-lg mt-1">
+          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          <span className="text-xs text-white font-medium">Download video</span>
         </div>
       </div>
     ),
