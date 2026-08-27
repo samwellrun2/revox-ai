@@ -11,22 +11,22 @@ const stats = [
 
 const testimonials = [
   {
-    quote: "I grew my Spanish audience by 300% in two months. The voice cloning is insane — my subscribers can't tell it's AI.",
-    name: "Alex Rivera",
-    role: "YouTube Creator, 2.1M subs",
-    avatar: "AR",
+    quote: "I translated my cooking tutorials into Spanish and got way more views from Latin America. Super easy to use.",
+    name: "Jessica M.",
+    role: "Content creator",
+    avatar: "JM",
   },
   {
-    quote: "We used to spend $5,000 per video on professional dubbing. Revox does it in minutes for a fraction of the cost.",
-    name: "Sarah Chen",
-    role: "Head of Content, TechFlow",
-    avatar: "SC",
+    quote: "I needed my training videos in French for our Montreal office. This saved me from hiring a translator.",
+    name: "David K.",
+    role: "Small business owner",
+    avatar: "DK",
   },
   {
-    quote: "The quality is better than any other AI dubbing tool I've tried. And I've tried them all.",
-    name: "Marcus Johnson",
-    role: "Podcast Host & Creator",
-    avatar: "MJ",
+    quote: "Really impressed with how natural the translated audio sounds. Used it for a school project and my professor loved it.",
+    name: "Ryan T.",
+    role: "College student",
+    avatar: "RT",
   },
 ];
 
