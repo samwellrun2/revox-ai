@@ -6,7 +6,7 @@ export function Footer() {
     <footer className="border-t border-brand-border py-12 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-2">
-          <Image src="/logo-icon.png" alt="Revox AI" width={32} height={32} className="object-contain" />
+          <Image src="/logo.svg" alt="Revox AI" width={28} height={28} />
           <span className="font-semibold">Revox AI</span>
         </div>
         <div className="flex items-center gap-6 text-sm text-brand-muted">

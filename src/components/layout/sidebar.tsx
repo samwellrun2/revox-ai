@@ -42,7 +42,7 @@ export function Sidebar() {
     <aside className="w-64 border-r border-brand-border bg-white h-screen sticky top-0 flex flex-col">
       <div className="p-6">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo-icon.png" alt="Revox AI" width={40} height={40} className="object-contain" />
+          <Image src="/logo.svg" alt="Revox AI" width={36} height={36} />
           <span className="text-xl font-bold tracking-tight">Revox AI</span>
         </Link>
       </div>

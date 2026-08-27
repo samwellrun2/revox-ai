@@ -13,7 +13,7 @@ export function Navbar() {
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo-icon.png" alt="Revox AI" width={40} height={40} className="object-contain" />
+          <Image src="/logo.svg" alt="Revox AI" width={36} height={36} />
           <span className="text-xl font-bold tracking-tight">Revox AI</span>
         </Link>
 

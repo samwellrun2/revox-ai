@@ -1,14 +1,22 @@
 <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Rounded square background -->
-  <rect width="40" height="40" rx="10" fill="#4F46E5"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="40" y2="40">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="8" y1="8" x2="32" y2="32">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#A78BFA"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square with blue-to-purple gradient -->
+  <rect width="40" height="40" rx="10" fill="url(#bg)"/>
 
-  <!-- Stylized "R" made of sound wave + play button -->
-  <!-- Vertical bar of R -->
-  <rect x="11" y="9" width="4.5" height="22" rx="2.25" fill="white"/>
-
-  <!-- Top arc of R (like a sound wave) -->
-  <path d="M15.5 9H22C25.866 9 29 12.134 29 16C29 19.866 25.866 23 22 23H15.5" stroke="white" stroke-width="4.5" stroke-linecap="round" fill="none"/>
-
-  <!-- Diagonal leg of R (like a play/forward arrow) -->
-  <path d="M19 23L29 31" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Stylized R matching the logo style -->
+  <!-- Vertical bar -->
+  <rect x="10" y="8" width="4" height="24" rx="2" fill="white"/>
+  <!-- Top swoosh of R -->
+  <path d="M14 8C14 8 18 8 22 8C27 8 30 11 30 15C30 19 27 22 22 22L14 22" stroke="white" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <!-- Diagonal leg swooping down -->
+  <path d="M18 22C20 24 26 30 29 32" stroke="white" stroke-width="4" stroke-linecap="round"/>
 </svg>
