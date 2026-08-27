@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 export function Navbar() {
@@ -12,9 +13,7 @@ export function Navbar() {
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-brand-primary flex items-center justify-center">
-            <span className="text-white font-bold text-sm">R</span>
-          </div>
+          <Image src="/logo.svg" alt="Revox AI" width={32} height={32} />
           <span className="text-xl font-bold tracking-tight">Revox AI</span>
         </Link>
 

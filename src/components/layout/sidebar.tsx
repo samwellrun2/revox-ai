@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const navItems = [
@@ -41,9 +42,7 @@ export function Sidebar() {
     <aside className="w-64 border-r border-brand-border bg-white h-screen sticky top-0 flex flex-col">
       <div className="p-6">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-brand-primary flex items-center justify-center">
-            <span className="text-white font-bold text-sm">R</span>
-          </div>
+          <Image src="/logo.svg" alt="Revox AI" width={32} height={32} />
           <span className="text-xl font-bold tracking-tight">Revox AI</span>
         </Link>
       </div>

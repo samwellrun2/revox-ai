@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "Revox AI — Your Voice. Any Language.",
   description:
     "Translate any video into 50+ languages with AI voice cloning that preserves the original speaker's voice.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
