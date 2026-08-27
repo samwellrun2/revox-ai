@@ -1,0 +1,142 @@
+"use client";
+
+import { useState } from "react";
+
+const tiers = [
+  {
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    description: "Try it out",
+    features: [
+      "3 minutes / month",
+      "Up to 2 min videos",
+      "5 languages",
+      "Standard voice quality",
+      "Watermarked downloads",
+    ],
+    cta: "Get started",
+    plan: null,
+    highlighted: false,
+  },
+  {
+    name: "Pro",
+    price: "$15",
+    period: "/ month",
+    description: "For creators",
+    features: [
+      "30 minutes / month",
+      "Up to 15 min videos",
+      "50+ languages",
+      "HD voice cloning",
+      "Clean downloads",
+    ],
+    cta: "Upgrade to Pro",
+    plan: "pro" as const,
+    highlighted: true,
+  },
+  {
+    name: "Business",
+    price: "$49",
+    period: "/ month",
+    description: "For teams",
+    features: [
+      "120 minutes / month",
+      "Up to 60 min videos",
+      "50+ languages",
+      "HD voice cloning",
+      "Priority processing",
+    ],
+    cta: "Upgrade to Business",
+    plan: "business" as const,
+    highlighted: false,
+  },
+  {
+    name: "Enterprise",
+    price: "$99",
+    period: "/ month",
+    description: "For scale",
+    features: [
+      "500 minutes / month",
+      "Unlimited video length",
+      "50+ languages",
+      "Ultra HD voice cloning",
+      "Priority processing",
+      "API access",
+    ],
+    cta: "Upgrade to Enterprise",
+    plan: "enterprise" as const,
+    highlighted: false,
+  },
+];
+
+export function PricingCards({ currentTier }: { currentTier: string }) {
+  const [loading, setLoading] = useState<string | null>(null);
+
+  async function handleUpgrade(plan: string) {
+    setLoading(plan);
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert(data.error ?? "Something went wrong");
+      setLoading(null);
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {tiers.map((tier) => {
+        const isCurrent = tier.plan === currentTier || (tier.plan === null && currentTier === "free");
+        return (
+          <div
+            key={tier.name}
+            className={`relative rounded-card p-6 transition-all ${
+              tier.highlighted
+                ? "bg-white border-2 border-brand-primary shadow-lg shadow-brand-primary/10 scale-[1.02]"
+                : "bg-white border border-brand-border"
+            }`}
+          >
+            {tier.highlighted && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-brand-primary text-white text-xs font-semibold rounded-full">
+                Most popular
+              </div>
+            )}
+            <h3 className="text-lg font-semibold">{tier.name}</h3>
+            <p className="text-sm text-brand-muted mb-4">{tier.description}</p>
+            <div className="flex items-baseline gap-1 mb-6">
+              <span className="text-4xl font-bold">{tier.price}</span>
+              <span className="text-brand-muted text-sm">{tier.period}</span>
+            </div>
+            <ul className="space-y-2.5 mb-8">
+              {tier.features.map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm">
+                  <svg className="w-4 h-4 text-brand-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => tier.plan && handleUpgrade(tier.plan)}
+              disabled={isCurrent || loading !== null}
+              className={`w-full py-2.5 rounded-xl font-medium transition-colors ${
+                tier.highlighted
+                  ? "bg-brand-primary hover:bg-brand-primary-hover text-white"
+                  : "bg-gray-100 hover:bg-gray-200 text-brand-text"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isCurrent ? "Current plan" : loading === tier.plan ? "Redirecting..." : tier.cta}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
