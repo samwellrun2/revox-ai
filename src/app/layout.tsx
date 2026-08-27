@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description:
     "Translate any video into 50+ languages with AI voice cloning that preserves the original speaker's voice.",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/favicon.png",
   },
 };
 
