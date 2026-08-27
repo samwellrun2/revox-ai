@@ -57,4 +57,4 @@ export const LANGUAGES = [
 
 export type LanguageCode = (typeof LANGUAGES)[number]["code"];
 
-export const FREE_LANGUAGES = LANGUAGES.slice(0, 5).map((l) => l.code);
+export const FREE_LANGUAGES: string[] = LANGUAGES.slice(0, 5).map((l) => l.code);

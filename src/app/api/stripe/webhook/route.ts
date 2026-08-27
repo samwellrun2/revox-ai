@@ -45,12 +45,14 @@ export async function POST(request: Request) {
 
     case "customer.subscription.updated": {
       const sub = event.data.object as Stripe.Subscription;
+      const periodStart = (sub as unknown as Record<string, number>).current_period_start;
+      const periodEnd = (sub as unknown as Record<string, number>).current_period_end;
       await supabase
         .from("subscriptions")
         .update({
           status: sub.status === "active" ? "active" : "past_due",
-          current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          ...(periodStart && { current_period_start: new Date(periodStart * 1000).toISOString() }),
+          ...(periodEnd && { current_period_end: new Date(periodEnd * 1000).toISOString() }),
         })
         .eq("stripe_subscription_id", sub.id);
       break;
