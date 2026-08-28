@@ -13,9 +13,9 @@ export default function AuthPage() {
         <AuthForm />
         <p className="text-center text-xs text-brand-muted mt-8">
           By signing up, you agree to our{" "}
-          <Link href="/terms" className="text-brand-primary hover:underline">Terms</Link>
-          {" "}and{" "}
-          <Link href="/privacy" className="text-brand-primary hover:underline">Privacy Policy</Link>.
+          <Link href="/terms" className="text-brand-primary hover:underline">Terms</Link>,{" "}
+          <Link href="/privacy" className="text-brand-primary hover:underline">Privacy Policy</Link>, and{" "}
+          <Link href="/acceptable-use" className="text-brand-primary hover:underline">Acceptable Use Policy</Link>.
         </p>
       </div>
     </main>

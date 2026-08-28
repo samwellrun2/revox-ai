@@ -61,10 +61,34 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-semibold text-brand-text">8. Cookies</h2>
             <p>We use essential cookies for authentication and session management. We do not use tracking or advertising cookies.</p>
 
-            <h2 className="text-lg font-semibold text-brand-text">9. Changes to This Policy</h2>
+            <h2 className="text-lg font-semibold text-brand-text">9. International Users (GDPR)</h2>
+            <p>If you are located in the European Economic Area (EEA), United Kingdom, or similar jurisdictions, you have additional rights under the General Data Protection Regulation (GDPR):</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Legal basis:</strong> We process your data based on your consent (account creation) and legitimate interest (service operation)</li>
+              <li><strong>Data portability:</strong> You may request a copy of your data in a machine-readable format</li>
+              <li><strong>Right to erasure:</strong> You may request complete deletion of all your data</li>
+              <li><strong>Right to restrict processing:</strong> You may request we limit how we use your data</li>
+              <li><strong>Right to object:</strong> You may object to our processing of your data</li>
+              <li><strong>Data transfers:</strong> Your data may be transferred to and processed in the United States where our servers are located</li>
+            </ul>
+            <p>To exercise any of these rights, contact us at <a href="mailto:sam.fan2009@gmail.com" className="text-brand-primary hover:underline">sam.fan2009@gmail.com</a>. We will respond within 30 days.</p>
+
+            <h2 className="text-lg font-semibold text-brand-text">10. California Residents (CCPA)</h2>
+            <p>If you are a California resident, you have the right to:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Know what personal data we collect about you</li>
+              <li>Request deletion of your personal data</li>
+              <li>Opt out of the sale of your personal data (we do not sell your data)</li>
+              <li>Not be discriminated against for exercising your rights</li>
+            </ul>
+
+            <h2 className="text-lg font-semibold text-brand-text">11. Children&apos;s Privacy</h2>
+            <p>Revox AI is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you believe we have collected data from a child under 13, contact us immediately and we will delete it.</p>
+
+            <h2 className="text-lg font-semibold text-brand-text">12. Changes to This Policy</h2>
             <p>We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the date above.</p>
 
-            <h2 className="text-lg font-semibold text-brand-text">10. Contact</h2>
+            <h2 className="text-lg font-semibold text-brand-text">13. Contact</h2>
             <p>If you have questions about this privacy policy, contact us at <a href="mailto:sam.fan2009@gmail.com" className="text-brand-primary hover:underline">sam.fan2009@gmail.com</a>.</p>
           </section>
         </div>

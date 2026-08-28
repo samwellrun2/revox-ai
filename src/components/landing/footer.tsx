@@ -9,10 +9,12 @@ export function Footer() {
           <Image src="/logo.png" alt="Revox AI" width={28} height={28} className="rounded-md" />
           <span className="font-semibold">Revox AI</span>
         </div>
-        <div className="flex items-center gap-6 text-sm text-brand-muted">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-brand-muted">
           <Link href="/pricing" className="hover:text-brand-text transition-colors">Pricing</Link>
           <Link href="/terms" className="hover:text-brand-text transition-colors">Terms</Link>
           <Link href="/privacy" className="hover:text-brand-text transition-colors">Privacy</Link>
+          <Link href="/acceptable-use" className="hover:text-brand-text transition-colors">Acceptable Use</Link>
+          <Link href="/dmca" className="hover:text-brand-text transition-colors">DMCA</Link>
           <Link href="/contact" className="hover:text-brand-text transition-colors">Contact</Link>
         </div>
         <p className="text-sm text-brand-muted">
