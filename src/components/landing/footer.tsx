@@ -11,9 +11,9 @@ export function Footer() {
         </div>
         <div className="flex items-center gap-6 text-sm text-brand-muted">
           <Link href="/pricing" className="hover:text-brand-text transition-colors">Pricing</Link>
-          <a href="#" className="hover:text-brand-text transition-colors">Terms</a>
-          <a href="#" className="hover:text-brand-text transition-colors">Privacy</a>
-          <a href="#" className="hover:text-brand-text transition-colors">Contact</a>
+          <Link href="/terms" className="hover:text-brand-text transition-colors">Terms</Link>
+          <Link href="/privacy" className="hover:text-brand-text transition-colors">Privacy</Link>
+          <Link href="/contact" className="hover:text-brand-text transition-colors">Contact</Link>
         </div>
         <p className="text-sm text-brand-muted">
           &copy; {new Date().getFullYear()} Revox AI. All rights reserved.

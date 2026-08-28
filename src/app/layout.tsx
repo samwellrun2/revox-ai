@@ -11,6 +11,20 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.png",
   },
+  openGraph: {
+    title: "Revox AI — Your Voice. Any Language.",
+    description:
+      "Translate any video into 50+ languages with AI voice cloning that preserves the original speaker's voice.",
+    type: "website",
+    siteName: "Revox AI",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Revox AI — Your Voice. Any Language.",
+    description:
+      "Translate any video into 50+ languages with AI voice cloning.",
+  },
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
 };
 
 export default function RootLayout({
