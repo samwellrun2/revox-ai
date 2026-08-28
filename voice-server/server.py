@@ -13,9 +13,14 @@ The Next.js app calls this automatically.
 import os
 import io
 import tempfile
+import subprocess
 import torch
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
+
+# Auto-accept XTTS license (non-commercial CPML)
+os.environ["COQUI_TOS_AGREED"] = "1"
+
 from TTS.api import TTS
 
 app = FastAPI(title="Revox Voice Server")
@@ -54,11 +59,18 @@ async def clone_and_speak(
     # Fall back to English if language not directly supported by XTTS
     tts_lang = language if language in SUPPORTED_LANGUAGES else "en"
 
-    # Save uploaded speaker audio to temp file
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_speaker:
+    # Save uploaded speaker audio and convert to WAV with ffmpeg
+    with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp_raw:
         content = await speaker_audio.read()
-        tmp_speaker.write(content)
-        speaker_path = tmp_speaker.name
+        tmp_raw.write(content)
+        raw_path = tmp_raw.name
+
+    speaker_path = raw_path.replace(".mp3", ".wav")
+    subprocess.run(
+        ["ffmpeg", "-y", "-i", raw_path, "-ar", "22050", "-ac", "1", speaker_path],
+        capture_output=True,
+    )
+    os.unlink(raw_path)
 
     # Generate speech with cloned voice
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_output:

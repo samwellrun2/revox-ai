@@ -49,7 +49,7 @@ export function RecentTranslations({ translations }: RecentTranslationsProps) {
             <div>
               <p className="text-sm font-medium">{t.target_language.toUpperCase()}</p>
               <p className="text-xs text-brand-muted">
-                {new Date(t.created_at).toLocaleDateString()}
+                {new Date(t.created_at).toLocaleDateString("en-US")}
                 {t.duration_seconds && ` · ${Math.ceil(t.duration_seconds / 60)} min`}
               </p>
             </div>
