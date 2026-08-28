@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { transcribe } from "./transcribe";
-import { translateText } from "./translate";
-import { dubAudio } from "./dub";
+import { translateSegments } from "./translate";
+import { dubSegments } from "./dub";
 import { mergeAudioVideo, getVideoDuration, extractAudio } from "./merge";
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -79,21 +79,21 @@ export async function processTranslation(translationId: string) {
     // Extract audio for voice cloning
     const audioPath = await extractAudio(videoPath);
 
-    // Transcribe
-    const { text, language } = await transcribe(audioPath);
+    // Transcribe with timestamps
+    const { language, segments } = await transcribe(audioPath);
     await updateStatus(translationId, "translating", { source_language: language });
 
-    // Translate
-    const translatedText = await translateText(text, language, translation.target_language);
+    // Translate segment by segment (preserves timing)
+    const translatedSegments = await translateSegments(segments, language, translation.target_language);
     await updateStatus(translationId, "dubbing");
 
-    // Dub with voice cloning
+    // Dub with voice cloning — segment by segment with pauses
     const { data: audioUrlData } = supabase.storage
       .from("videos")
       .getPublicUrl(translation.source_file_path ?? "");
     const sourceAudioUrl = audioUrlData?.publicUrl ?? translation.source_url;
 
-    const dubbedAudio = await dubAudio(translatedText, translation.target_language, sourceAudioUrl!);
+    const dubbedAudio = await dubSegments(translatedSegments, translation.target_language, sourceAudioUrl!);
     await updateStatus(translationId, "merging");
 
     // Merge

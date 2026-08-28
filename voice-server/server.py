@@ -100,6 +100,100 @@ async def clone_and_speak(
             os.unlink(output_path)
 
 
+@app.post("/clone-segments")
+async def clone_segments(
+    segments: str = Form(...),
+    language: str = Form(...),
+    speaker_audio: UploadFile = File(...),
+):
+    """
+    Clone voice and generate speech for multiple segments with pauses between them.
+    Segments include start/end times so we insert silence to match original timing.
+    """
+    import json
+    import numpy as np
+    import soundfile as sf
+
+    tts_lang = language if language in SUPPORTED_LANGUAGES else "en"
+
+    # Save speaker audio and convert to WAV
+    with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp_raw:
+        content = await speaker_audio.read()
+        tmp_raw.write(content)
+        raw_path = tmp_raw.name
+
+    speaker_path = raw_path.replace(".mp3", ".wav")
+    subprocess.run(
+        ["ffmpeg", "-y", "-i", raw_path, "-ar", "22050", "-ac", "1", speaker_path],
+        capture_output=True,
+    )
+    os.unlink(raw_path)
+
+    segment_list = json.loads(segments)
+    sample_rate = 22050
+    all_audio = np.array([], dtype=np.float32)
+    current_time = 0.0
+
+    try:
+        for seg in segment_list:
+            seg_start = float(seg["start"])
+            seg_text = seg["text"].strip()
+
+            if not seg_text:
+                continue
+
+            # Add silence for the gap between current position and segment start
+            gap = seg_start - current_time
+            if gap > 0.05:  # Only add silence if gap > 50ms
+                silence_samples = int(gap * sample_rate)
+                silence = np.zeros(silence_samples, dtype=np.float32)
+                all_audio = np.concatenate([all_audio, silence])
+
+            # Generate speech for this segment
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_out:
+                seg_output = tmp_out.name
+
+            tts.tts_to_file(
+                text=seg_text,
+                speaker_wav=speaker_path,
+                language=tts_lang,
+                file_path=seg_output,
+            )
+
+            # Read generated audio
+            seg_audio, sr = sf.read(seg_output)
+            if sr != sample_rate:
+                # Resample if needed
+                import torchaudio
+                seg_tensor = torch.from_numpy(seg_audio).float().unsqueeze(0)
+                resampled = torchaudio.functional.resample(seg_tensor, sr, sample_rate)
+                seg_audio = resampled.squeeze().numpy()
+
+            all_audio = np.concatenate([all_audio, seg_audio])
+            current_time = seg_start + len(seg_audio) / sample_rate
+            os.unlink(seg_output)
+
+        # Write final combined audio
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_final:
+            final_path = tmp_final.name
+
+        sf.write(final_path, all_audio, sample_rate)
+
+        with open(final_path, "rb") as f:
+            audio_bytes = f.read()
+
+        os.unlink(final_path)
+
+        return StreamingResponse(
+            io.BytesIO(audio_bytes),
+            media_type="audio/wav",
+            headers={"Content-Disposition": "attachment; filename=dubbed.wav"},
+        )
+    finally:
+        if os.path.exists(speaker_path):
+            os.unlink(speaker_path)
+
+
 @app.post("/fine-tune")
 async def fine_tune(
     dataset: UploadFile = File(...),
