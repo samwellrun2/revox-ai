@@ -68,9 +68,9 @@ export function TranslationProgress({ id }: { id: string }) {
         <>
           <div className="space-y-4 mb-8">
             {STEPS.map((step, i) => {
-              const isActive = step.key === data.status;
-              const isCompleted = i < currentStepIndex;
-              const isFuture = i > currentStepIndex;
+              const isCompleted = data.status === "completed" ? true : i < currentStepIndex;
+              const isActive = !isCompleted && step.key === data.status;
+              const isFuture = !isCompleted && !isActive;
 
               return (
                 <div key={step.key} className="flex items-center gap-4">
