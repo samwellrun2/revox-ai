@@ -62,9 +62,10 @@ export function AccountSettings({
 
       <div className="p-6 rounded-card border border-brand-border bg-white space-y-4">
         <h2 className="font-semibold">Subscription</h2>
-        {stripeSubscriptionId ? (
+        {tier !== "free" ? (
           <p className="text-sm text-brand-muted">
-            Manage your billing and subscription through the Stripe customer portal.
+            You&apos;re on the <span className="font-medium text-brand-text capitalize">{tier}</span> plan.
+            {stripeSubscriptionId && " Manage your billing through the Stripe customer portal."}
           </p>
         ) : (
           <p className="text-sm text-brand-muted">

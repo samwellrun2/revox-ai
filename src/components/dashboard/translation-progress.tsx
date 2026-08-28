@@ -40,9 +40,22 @@ function getLanguageName(code: string): string {
   return lang ? `${lang.flag} ${lang.name}` : code.toUpperCase();
 }
 
+// Each step gets a percentage range so progress feels smooth
+const STEP_RANGES = [
+  { start: 0, end: 5 },      // pending
+  { start: 5, end: 20 },     // transcribing
+  { start: 20, end: 35 },    // translating
+  { start: 35, end: 85 },    // dubbing (longest step)
+  { start: 85, end: 98 },    // merging
+  { start: 98, end: 100 },   // completed
+];
+
 export function TranslationProgress({ id }: { id: string }) {
   const [data, setData] = useState<TranslationData | null>(null);
   const [elapsed, setElapsed] = useState("0s");
+  const [smoothPercent, setSmoothPercent] = useState(0);
+  const [stepEnteredAt, setStepEnteredAt] = useState(Date.now());
+  const [lastStatus, setLastStatus] = useState("");
 
   useEffect(() => {
     async function poll() {
@@ -58,14 +71,33 @@ export function TranslationProgress({ id }: { id: string }) {
     poll();
   }, [id]);
 
-  // Update elapsed time every second while processing
+  // Track when step changes
   useEffect(() => {
-    if (!data || data.status === "completed" || data.status === "failed") return;
+    if (data && data.status !== lastStatus) {
+      setLastStatus(data.status);
+      setStepEnteredAt(Date.now());
+    }
+  }, [data, lastStatus]);
+
+  // Smooth percentage + elapsed time ticker
+  useEffect(() => {
+    if (!data || data.status === "completed" || data.status === "failed") {
+      if (data?.status === "completed") setSmoothPercent(100);
+      return;
+    }
     const interval = setInterval(() => {
       setElapsed(getElapsedTime(data.created_at));
+
+      const stepIdx = STEPS.findIndex((s) => s.key === data.status);
+      const range = STEP_RANGES[stepIdx] ?? { start: 0, end: 100 };
+      const timeInStep = (Date.now() - stepEnteredAt) / 1000;
+      // Ease toward 90% of the step range over time (never quite reaches end)
+      const stepProgress = 1 - Math.exp(-timeInStep / 60);
+      const percent = range.start + (range.end - range.start) * stepProgress * 0.9;
+      setSmoothPercent(Math.round(Math.min(percent, range.end - 1)));
     }, 1000);
     return () => clearInterval(interval);
-  }, [data]);
+  }, [data, stepEnteredAt]);
 
   if (!data) {
     return (
@@ -76,9 +108,7 @@ export function TranslationProgress({ id }: { id: string }) {
   }
 
   const currentStepIndex = STEPS.findIndex((s) => s.key === data.status);
-  const percentage = data.status === "completed"
-    ? 100
-    : Math.round(((currentStepIndex + 0.5) / STEPS.length) * 100);
+  const percentage = data.status === "completed" ? 100 : smoothPercent;
 
   const totalTime = data.completed_at
     ? getElapsedTime(data.created_at, data.completed_at)
