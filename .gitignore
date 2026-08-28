@@ -2,3 +2,8 @@ node_modules
 .next
 .env.local
 .env
+voice-server/.venv
+voice-server/__pycache__
+.superpowers
+*.pyc
+.python-version
