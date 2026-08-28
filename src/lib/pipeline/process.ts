@@ -3,9 +3,24 @@ import { transcribe } from "./transcribe";
 import { translateText } from "./translate";
 import { dubAudio } from "./dub";
 import { mergeAudioVideo, getVideoDuration, extractAudio } from "./merge";
+import { exec } from "child_process";
+import { promisify } from "util";
 import fs from "fs/promises";
 import path from "path";
 import os from "os";
+
+const execAsync = promisify(exec);
+
+function isVideoUrl(url: string): boolean {
+  return /youtube\.com|youtu\.be|vimeo\.com|tiktok\.com|twitter\.com|x\.com|instagram\.com/i.test(url);
+}
+
+async function downloadWithYtDlp(url: string, outputPath: string): Promise<void> {
+  await execAsync(
+    `yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4 -o "${outputPath}" "${url}"`,
+    { timeout: 300000 }
+  );
+}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,9 +58,16 @@ export async function processTranslation(translationId: string) {
     } else if (translation.source_url) {
       const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "revox-src-"));
       videoPath = path.join(tmpDir, "source.mp4");
-      const res = await fetch(translation.source_url);
-      const buffer = Buffer.from(await res.arrayBuffer());
-      await fs.writeFile(videoPath, buffer);
+
+      if (isVideoUrl(translation.source_url)) {
+        // Use yt-dlp for YouTube, Vimeo, TikTok, etc.
+        await downloadWithYtDlp(translation.source_url, videoPath);
+      } else {
+        // Direct video URL — download with fetch
+        const res = await fetch(translation.source_url);
+        const buffer = Buffer.from(await res.arrayBuffer());
+        await fs.writeFile(videoPath, buffer);
+      }
     } else {
       throw new Error("No source video");
     }

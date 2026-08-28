@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const tiers = [
   {
@@ -67,6 +68,7 @@ const tiers = [
 
 export function PricingCards({ currentTier }: { currentTier: string }) {
   const [loading, setLoading] = useState<string | null>(null);
+  const router = useRouter();
 
   async function handleUpgrade(plan: string) {
     setLoading(plan);
@@ -119,7 +121,13 @@ export function PricingCards({ currentTier }: { currentTier: string }) {
               ))}
             </ul>
             <button
-              onClick={() => tier.plan && handleUpgrade(tier.plan)}
+              onClick={() => {
+                if (tier.plan) {
+                  handleUpgrade(tier.plan);
+                } else {
+                  router.push("/auth");
+                }
+              }}
               disabled={isCurrent || loading !== null}
               className={`w-full py-2.5 rounded-xl font-medium transition-colors ${
                 tier.highlighted
