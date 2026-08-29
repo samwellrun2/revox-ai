@@ -37,7 +37,7 @@ function getLangInfo(code: string) {
 
 function getYouTubeThumbnail(url: string | null | undefined): string | null {
   if (!url) return null;
-  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   if (match) return `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`;
   return null;
 }
@@ -92,10 +92,14 @@ export function RecentTranslations({ translations, showDelete = false }: RecentT
               {/* Thumbnail / preview */}
               <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-50">
                 {(thumbnail || t.thumbnail_url) ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
-                    src={thumbnail || t.thumbnail_url || ""}
+                    src={(thumbnail || t.thumbnail_url)!}
                     alt="Video thumbnail"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
