@@ -11,18 +11,17 @@ The Next.js app calls this automatically.
 """
 
 import os
+
+# MUST be set before importing torch
+os.environ["COQUI_TOS_AGREED"] = "1"
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+
 import io
 import tempfile
 import subprocess
 import torch
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
-
-# Auto-accept XTTS license (non-commercial CPML)
-os.environ["COQUI_TOS_AGREED"] = "1"
-# Allow MPS (Metal) to fall back to CPU for unsupported ops
-os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-
 from TTS.api import TTS
 
 app = FastAPI(title="Revox Voice Server")
