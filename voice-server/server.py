@@ -25,11 +25,16 @@ from TTS.api import TTS
 
 app = FastAPI(title="Revox Voice Server")
 
-# Load XTTS v2 on startup — first run downloads the model (~2GB)
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# Load XTTS v2 — use GPU if available (CUDA > Metal > CPU)
+if torch.cuda.is_available():
+    device = "cuda"
+elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    device = "mps"
+else:
+    device = "cpu"
 print(f"Loading XTTS v2 on {device}...")
 tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
-print("Model loaded!")
+print(f"Model loaded on {device}!")
 
 # XTTS v2 supported languages
 SUPPORTED_LANGUAGES = [
