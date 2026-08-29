@@ -155,60 +155,62 @@ async def clone_segments(
         )
         print(f"[clone-segments] Voice embedding computed. Processing {len(segment_list)} segments")
 
-        # Strategy: Generate all text as ONE continuous audio for perfect voice consistency
-        # Then place segments at correct timestamps
-        all_texts = [seg["text"].strip() for seg in segment_list if seg["text"].strip()]
-        combined_text = " ... ".join(all_texts)  # "..." creates natural pauses
+        # Generate each segment with pre-computed voice embedding
+        # Same embedding = same voice. Natural parameters = natural sound.
+        # Set a fixed seed so each run is reproducible
+        torch.manual_seed(42)
 
-        if len(combined_text) > 0:
-            print(f"[clone-segments] Generating combined audio ({len(combined_text)} chars)")
+        for i, seg in enumerate(segment_list):
+            seg_start = float(seg["start"])
+            seg_end = float(seg["end"])
+            seg_text = seg["text"].strip()
+            target_duration = seg_end - seg_start
 
-            # ONE generation call = ONE consistent voice
+            if not seg_text or target_duration <= 0:
+                continue
+
+            print(f"[clone-segments] Segment {i+1}/{len(segment_list)}: '{seg_text[:50]}' ({target_duration:.1f}s)")
+
+            # Natural voice parameters (like the original tts.tts_to_file used)
+            # but with pre-computed embedding for consistency
             result = xtts_model.inference(
-                text=combined_text,
+                text=seg_text,
                 language=tts_lang,
                 gpt_cond_latent=gpt_cond_latent,
                 speaker_embedding=speaker_embedding,
-                temperature=0.1,            # Nearly deterministic
+                temperature=0.65,          # Natural sounding (default is 0.75)
                 length_penalty=1.0,
                 repetition_penalty=10.0,
-                top_k=1,                    # Greedy decoding — zero randomness
-                top_p=1.0,
-                do_sample=False,            # Fully deterministic — no sampling
+                top_k=50,                  # Default — natural variation
+                top_p=0.85,                # Default — natural variation
+                do_sample=True,            # Natural sampling — NOT greedy
                 speed=1.0,
-                enable_text_splitting=True,  # Let XTTS handle long text
             )
 
-            combined_audio = np.array(result["wav"], dtype=np.float32)
-            if len(combined_audio.shape) > 1:
-                combined_audio = combined_audio[:, 0]
+            seg_audio = np.array(result["wav"], dtype=np.float32)
+            if len(seg_audio.shape) > 1:
+                seg_audio = seg_audio[:, 0]
 
-            combined_duration = len(combined_audio) / output_sr
-            print(f"[clone-segments] Combined audio: {combined_duration:.1f}s")
+            # Time-stretch to match original segment duration
+            generated_duration = len(seg_audio) / output_sr
+            target_samples = int(target_duration * output_sr)
 
-            # Now time-stretch the combined audio to match the total video duration
-            # and place it starting from the first segment's start time
-            first_start = float(segment_list[0]["start"])
-            last_end = float(segment_list[-1]["end"])
-            target_total = last_end - first_start
+            if generated_duration > 0 and target_samples > 0:
+                ratio = generated_duration / target_duration
+                if ratio < 0.85 or ratio > 1.15:
+                    original_indices = np.arange(len(seg_audio))
+                    target_indices = np.linspace(0, len(seg_audio) - 1, target_samples)
+                    seg_audio = np.interp(target_indices, original_indices, seg_audio).astype(np.float32)
 
-            if target_total > 0 and combined_duration > 0:
-                # Stretch combined audio to fit the speech window
-                target_samples = int(target_total * output_sr)
-                if abs(combined_duration - target_total) > 0.5:
-                    original_indices = np.arange(len(combined_audio))
-                    target_indices = np.linspace(0, len(combined_audio) - 1, target_samples)
-                    combined_audio = np.interp(target_indices, original_indices, combined_audio).astype(np.float32)
+            # Place segment at exact start position
+            start_sample = int(seg_start * output_sr)
+            end_sample = start_sample + len(seg_audio)
 
-                # Place at first segment start
-                start_sample = int(first_start * output_sr)
-                end_sample = start_sample + len(combined_audio)
+            if end_sample > len(all_audio):
+                extra = np.zeros(end_sample - len(all_audio), dtype=np.float32)
+                all_audio = np.concatenate([all_audio, extra])
 
-                if end_sample > len(all_audio):
-                    extra = np.zeros(end_sample - len(all_audio), dtype=np.float32)
-                    all_audio = np.concatenate([all_audio, extra])
-
-                all_audio[start_sample:start_sample + len(combined_audio)] = combined_audio
+            all_audio[start_sample:start_sample + len(seg_audio)] = seg_audio
 
         print(f"[clone-segments] Done. Total audio: {len(all_audio)/output_sr:.1f}s")
 
