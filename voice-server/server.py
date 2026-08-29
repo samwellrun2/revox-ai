@@ -138,6 +138,13 @@ async def clone_segments(
     all_audio = np.zeros(total_samples, dtype=np.float32)
 
     try:
+        # IMPORTANT: Compute voice embedding ONCE and reuse for all segments
+        # This ensures consistent voice across the entire video
+        xtts_model = tts.synthesizer.tts_model
+        gpt_cond_latent, speaker_embedding = xtts_model.get_conditioning_latents(
+            audio_path=[speaker_path]
+        )
+
         for seg in segment_list:
             seg_start = float(seg["start"])
             seg_end = float(seg["end"])
@@ -147,35 +154,37 @@ async def clone_segments(
             if not seg_text or target_duration <= 0:
                 continue
 
-            # Generate speech for this segment
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_out:
-                seg_output = tmp_out.name
-
-            tts.tts_to_file(
+            # Generate speech using pre-computed voice embedding (same voice every time)
+            result = xtts_model.inference(
                 text=seg_text,
-                speaker_wav=speaker_path,
                 language=tts_lang,
-                file_path=seg_output,
+                gpt_cond_latent=gpt_cond_latent,
+                speaker_embedding=speaker_embedding,
+                temperature=0.65,
+                repetition_penalty=5.0,
+                top_k=50,
+                top_p=0.85,
             )
 
-            # Read generated audio
-            seg_audio, sr = sf.read(seg_output)
+            seg_audio = np.array(result["wav"], dtype=np.float32)
+
+            # Ensure mono
             if len(seg_audio.shape) > 1:
-                seg_audio = seg_audio[:, 0]  # mono
-            if sr != sample_rate:
+                seg_audio = seg_audio[:, 0]
+
+            # Resample if needed (XTTS outputs at 24000 Hz)
+            output_sr = 24000
+            if output_sr != sample_rate:
                 import torchaudio
                 seg_tensor = torch.from_numpy(seg_audio).float().unsqueeze(0)
-                resampled = torchaudio.functional.resample(seg_tensor, sr, sample_rate)
+                resampled = torchaudio.functional.resample(seg_tensor, output_sr, sample_rate)
                 seg_audio = resampled.squeeze().numpy()
-
-            os.unlink(seg_output)
 
             # Time-stretch: compress or expand audio to fit the original segment duration
             generated_duration = len(seg_audio) / sample_rate
             target_samples = int(target_duration * sample_rate)
 
             if generated_duration > 0 and abs(generated_duration - target_duration) > 0.1:
-                # Use linear interpolation to stretch/compress
                 original_indices = np.arange(len(seg_audio))
                 target_indices = np.linspace(0, len(seg_audio) - 1, target_samples)
                 seg_audio = np.interp(target_indices, original_indices, seg_audio).astype(np.float32)
