@@ -155,11 +155,10 @@ async def clone_segments(
         print(f"[clone-segments] Voice embedding computed. Processing {len(segment_list)} segments")
 
         # Generate each segment with pre-computed voice embedding
-        # Same embedding = same voice. Natural parameters = natural sound.
-        # Set a fixed seed so each run is reproducible
-        torch.manual_seed(42)
-
         for i, seg in enumerate(segment_list):
+            # Reset seed before EACH segment so voice stays consistent
+            torch.manual_seed(42)
+
             seg_start = float(seg["start"])
             seg_end = float(seg["end"])
             seg_text = seg["text"].strip()
