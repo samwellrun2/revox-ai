@@ -116,7 +116,7 @@ async def clone_segments(
 
     tts_lang = language if language in SUPPORTED_LANGUAGES else "en"
 
-    # Save speaker audio and convert to WAV
+    # Save speaker audio and convert to WAV at 22050Hz mono (what XTTS expects)
     with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp_raw:
         content = await speaker_audio.read()
         tmp_raw.write(content)
@@ -130,22 +130,29 @@ async def clone_segments(
     os.unlink(raw_path)
 
     segment_list = json.loads(segments)
-    sample_rate = 22050
+    # XTTS outputs at 24000 Hz — work in that sample rate throughout
+    output_sr = 24000
 
     # Calculate total duration from last segment end time
     total_duration = max(float(seg["end"]) for seg in segment_list) if segment_list else 0
-    total_samples = int(total_duration * sample_rate)
+    total_samples = int(total_duration * output_sr)
     all_audio = np.zeros(total_samples, dtype=np.float32)
 
     try:
-        # IMPORTANT: Compute voice embedding ONCE and reuse for all segments
-        # This ensures consistent voice across the entire video
+        # Compute voice embedding ONCE from the FULL speaker audio
+        # More audio = better voice clone
         xtts_model = tts.synthesizer.tts_model
-        gpt_cond_latent, speaker_embedding = xtts_model.get_conditioning_latents(
-            audio_path=[speaker_path]
-        )
 
-        for seg in segment_list:
+        print(f"[clone-segments] Computing voice embedding from {speaker_path}")
+        gpt_cond_latent, speaker_embedding = xtts_model.get_conditioning_latents(
+            audio_path=[speaker_path],
+            gpt_cond_len=30,        # Use up to 30 seconds of audio for conditioning
+            gpt_cond_chunk_len=4,   # Process in 4-second chunks
+            max_ref_length=60,      # Allow up to 60 seconds of reference
+        )
+        print(f"[clone-segments] Voice embedding computed. Processing {len(segment_list)} segments")
+
+        for i, seg in enumerate(segment_list):
             seg_start = float(seg["start"])
             seg_end = float(seg["end"])
             seg_text = seg["text"].strip()
@@ -154,16 +161,19 @@ async def clone_segments(
             if not seg_text or target_duration <= 0:
                 continue
 
-            # Generate speech using pre-computed voice embedding (same voice every time)
+            print(f"[clone-segments] Segment {i+1}/{len(segment_list)}: '{seg_text[:50]}...' ({target_duration:.1f}s)")
+
+            # Generate speech using pre-computed voice embedding
             result = xtts_model.inference(
                 text=seg_text,
                 language=tts_lang,
                 gpt_cond_latent=gpt_cond_latent,
                 speaker_embedding=speaker_embedding,
-                temperature=0.65,
-                repetition_penalty=5.0,
-                top_k=50,
-                top_p=0.85,
+                temperature=0.3,           # Lower = more consistent, closer to reference
+                repetition_penalty=10.0,   # Strong penalty against repetition
+                top_k=30,                  # More focused generation
+                top_p=0.75,                # Tighter sampling
+                speed=1.0,
             )
 
             seg_audio = np.array(result["wav"], dtype=np.float32)
@@ -172,40 +182,35 @@ async def clone_segments(
             if len(seg_audio.shape) > 1:
                 seg_audio = seg_audio[:, 0]
 
-            # Resample if needed (XTTS outputs at 24000 Hz)
-            output_sr = 24000
-            if output_sr != sample_rate:
-                import torchaudio
-                seg_tensor = torch.from_numpy(seg_audio).float().unsqueeze(0)
-                resampled = torchaudio.functional.resample(seg_tensor, output_sr, sample_rate)
-                seg_audio = resampled.squeeze().numpy()
+            # Time-stretch to match original segment duration
+            generated_duration = len(seg_audio) / output_sr
+            target_samples = int(target_duration * output_sr)
 
-            # Time-stretch: compress or expand audio to fit the original segment duration
-            generated_duration = len(seg_audio) / sample_rate
-            target_samples = int(target_duration * sample_rate)
+            if generated_duration > 0 and target_samples > 0:
+                # Only stretch if difference is significant (>15%)
+                ratio = generated_duration / target_duration
+                if ratio < 0.85 or ratio > 1.15:
+                    original_indices = np.arange(len(seg_audio))
+                    target_indices = np.linspace(0, len(seg_audio) - 1, target_samples)
+                    seg_audio = np.interp(target_indices, original_indices, seg_audio).astype(np.float32)
 
-            if generated_duration > 0 and abs(generated_duration - target_duration) > 0.1:
-                original_indices = np.arange(len(seg_audio))
-                target_indices = np.linspace(0, len(seg_audio) - 1, target_samples)
-                seg_audio = np.interp(target_indices, original_indices, seg_audio).astype(np.float32)
-
-            # Place segment at exact start position in the output
-            start_sample = int(seg_start * sample_rate)
+            # Place segment at exact start position
+            start_sample = int(seg_start * output_sr)
             end_sample = start_sample + len(seg_audio)
 
-            # Extend output array if needed
             if end_sample > len(all_audio):
                 extra = np.zeros(end_sample - len(all_audio), dtype=np.float32)
                 all_audio = np.concatenate([all_audio, extra])
 
-            # Mix in (overwrite silence with speech)
             all_audio[start_sample:start_sample + len(seg_audio)] = seg_audio
+
+        print(f"[clone-segments] All segments processed. Total audio: {len(all_audio)/output_sr:.1f}s")
 
         # Write final combined audio
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_final:
             final_path = tmp_final.name
 
-        sf.write(final_path, all_audio, sample_rate)
+        sf.write(final_path, all_audio, output_sr)
 
         with open(final_path, "rb") as f:
             audio_bytes = f.read()
