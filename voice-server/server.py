@@ -154,50 +154,54 @@ async def clone_segments(
         )
         print(f"[clone-segments] Voice embedding computed. Processing {len(segment_list)} segments")
 
-        # ONE generation call = ONE consistent voice throughout
-        all_texts = [seg["text"].strip() for seg in segment_list if seg["text"].strip() and float(seg["end"]) - float(seg["start"]) > 0]
-        valid_segments = [seg for seg in segment_list if seg["text"].strip() and float(seg["end"]) - float(seg["start"]) > 0]
+        # Per-segment generation with shared embedding + low temperature for consistency
+        # This preserves pauses while keeping voice similar across segments
+        for i, seg in enumerate(segment_list):
+            seg_start = float(seg["start"])
+            seg_end = float(seg["end"])
+            seg_text = seg["text"].strip()
+            target_duration = seg_end - seg_start
 
-        combined_text = ". ".join(all_texts)
-        print(f"[clone-segments] Generating ONE audio ({len(combined_text)} chars, {len(all_texts)} segments)")
+            if not seg_text or target_duration <= 0:
+                continue
 
-        result = xtts_model.inference(
-            text=combined_text,
-            language=tts_lang,
-            gpt_cond_latent=gpt_cond_latent,
-            speaker_embedding=speaker_embedding,
-            temperature=0.65,
-            length_penalty=1.0,
-            repetition_penalty=10.0,
-            top_k=50,
-            top_p=0.85,
-            do_sample=True,
-            speed=1.0,
-            enable_text_splitting=True,
-        )
+            print(f"[clone-segments] Segment {i+1}/{len(segment_list)}: '{seg_text[:50]}' ({target_duration:.1f}s)")
 
-        combined_audio = np.array(result["wav"], dtype=np.float32)
-        if len(combined_audio.shape) > 1:
-            combined_audio = combined_audio[:, 0]
+            result = xtts_model.inference(
+                text=seg_text,
+                language=tts_lang,
+                gpt_cond_latent=gpt_cond_latent,
+                speaker_embedding=speaker_embedding,
+                temperature=0.35,
+                length_penalty=1.0,
+                repetition_penalty=10.0,
+                top_k=30,
+                top_p=0.8,
+                do_sample=True,
+                speed=1.0,
+            )
 
-        first_start = float(valid_segments[0]["start"])
-        last_end = float(valid_segments[-1]["end"])
-        target_total = last_end - first_start
-        gen_duration = len(combined_audio) / output_sr
-        print(f"[clone-segments] Generated {gen_duration:.1f}s, target {target_total:.1f}s")
+            seg_audio = np.array(result["wav"], dtype=np.float32)
+            if len(seg_audio.shape) > 1:
+                seg_audio = seg_audio[:, 0]
 
-        # Time-stretch to fit original speech window
-        if target_total > 0 and gen_duration > 0:
-            target_samples = int(target_total * output_sr)
-            original_indices = np.arange(len(combined_audio))
-            target_indices = np.linspace(0, len(combined_audio) - 1, target_samples)
-            combined_audio = np.interp(target_indices, original_indices, combined_audio).astype(np.float32)
+            # Time-stretch to fit original segment timing
+            generated_duration = len(seg_audio) / output_sr
+            target_samples = int(target_duration * output_sr)
 
-        start_sample = int(first_start * output_sr)
-        end_sample = start_sample + len(combined_audio)
-        if end_sample > len(all_audio):
-            all_audio = np.concatenate([all_audio, np.zeros(end_sample - len(all_audio), dtype=np.float32)])
-        all_audio[start_sample:start_sample + len(combined_audio)] = combined_audio
+            if generated_duration > 0 and target_samples > 0:
+                ratio = generated_duration / target_duration
+                if ratio < 0.85 or ratio > 1.15:
+                    original_indices = np.arange(len(seg_audio))
+                    target_indices = np.linspace(0, len(seg_audio) - 1, target_samples)
+                    seg_audio = np.interp(target_indices, original_indices, seg_audio).astype(np.float32)
+
+            # Place at exact original timestamp
+            start_sample = int(seg_start * output_sr)
+            end_sample = start_sample + len(seg_audio)
+            if end_sample > len(all_audio):
+                all_audio = np.concatenate([all_audio, np.zeros(end_sample - len(all_audio), dtype=np.float32)])
+            all_audio[start_sample:start_sample + len(seg_audio)] = seg_audio
 
         print(f"[clone-segments] Done. Total audio: {len(all_audio)/output_sr:.1f}s")
 
