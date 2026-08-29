@@ -155,12 +155,7 @@ export function RecentTranslations({ translations, showDelete = false }: RecentT
                     <div>
                       <p className="text-sm font-medium">{lang.name}</p>
                       <p className="text-[11px] text-brand-muted">
-                        {new Date(t.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
+                        {new Date(t.created_at).toISOString().slice(0, 10)}
                       </p>
                     </div>
                   </div>

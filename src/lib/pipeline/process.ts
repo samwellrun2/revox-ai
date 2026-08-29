@@ -16,10 +16,15 @@ function isVideoUrl(url: string): boolean {
 }
 
 async function downloadWithYtDlp(url: string, outputPath: string): Promise<void> {
-  await execAsync(
-    `yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4 -o "${outputPath}" "${url}"`,
-    { timeout: 300000 }
-  );
+  try {
+    await execAsync(
+      `yt-dlp -f "best[ext=mp4]/best" --no-warnings --no-playlist -o "${outputPath}" "${url}"`,
+      { timeout: 300000, maxBuffer: 1024 * 1024 * 10 }
+    );
+  } catch (err) {
+    const error = err as Error & { stderr?: string };
+    throw new Error(`yt-dlp failed: ${error.stderr || error.message}`);
+  }
 }
 
 const supabase = createClient(
