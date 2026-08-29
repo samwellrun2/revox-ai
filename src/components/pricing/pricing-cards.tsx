@@ -67,7 +67,7 @@ const tiers = [
 ];
 
 export function PricingCards({ currentTier }: { currentTier: string }) {
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState("");
   const router = useRouter();
 
   async function handleUpgrade(plan: string) {
@@ -82,7 +82,7 @@ export function PricingCards({ currentTier }: { currentTier: string }) {
       window.location.href = data.url;
     } else {
       alert(data.error ?? "Something went wrong");
-      setLoading(null);
+      setLoading("");
     }
   }
 
