@@ -131,23 +131,21 @@ async def clone_segments(
 
     segment_list = json.loads(segments)
     sample_rate = 22050
-    all_audio = np.array([], dtype=np.float32)
-    current_time = 0.0
+
+    # Calculate total duration from last segment end time
+    total_duration = max(float(seg["end"]) for seg in segment_list) if segment_list else 0
+    total_samples = int(total_duration * sample_rate)
+    all_audio = np.zeros(total_samples, dtype=np.float32)
 
     try:
         for seg in segment_list:
             seg_start = float(seg["start"])
+            seg_end = float(seg["end"])
             seg_text = seg["text"].strip()
+            target_duration = seg_end - seg_start
 
-            if not seg_text:
+            if not seg_text or target_duration <= 0:
                 continue
-
-            # Add silence for the gap between current position and segment start
-            gap = seg_start - current_time
-            if gap > 0.05:  # Only add silence if gap > 50ms
-                silence_samples = int(gap * sample_rate)
-                silence = np.zeros(silence_samples, dtype=np.float32)
-                all_audio = np.concatenate([all_audio, silence])
 
             # Generate speech for this segment
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_out:
@@ -162,16 +160,37 @@ async def clone_segments(
 
             # Read generated audio
             seg_audio, sr = sf.read(seg_output)
+            if len(seg_audio.shape) > 1:
+                seg_audio = seg_audio[:, 0]  # mono
             if sr != sample_rate:
-                # Resample if needed
                 import torchaudio
                 seg_tensor = torch.from_numpy(seg_audio).float().unsqueeze(0)
                 resampled = torchaudio.functional.resample(seg_tensor, sr, sample_rate)
                 seg_audio = resampled.squeeze().numpy()
 
-            all_audio = np.concatenate([all_audio, seg_audio])
-            current_time = seg_start + len(seg_audio) / sample_rate
             os.unlink(seg_output)
+
+            # Time-stretch: compress or expand audio to fit the original segment duration
+            generated_duration = len(seg_audio) / sample_rate
+            target_samples = int(target_duration * sample_rate)
+
+            if generated_duration > 0 and abs(generated_duration - target_duration) > 0.1:
+                # Use linear interpolation to stretch/compress
+                original_indices = np.arange(len(seg_audio))
+                target_indices = np.linspace(0, len(seg_audio) - 1, target_samples)
+                seg_audio = np.interp(target_indices, original_indices, seg_audio).astype(np.float32)
+
+            # Place segment at exact start position in the output
+            start_sample = int(seg_start * sample_rate)
+            end_sample = start_sample + len(seg_audio)
+
+            # Extend output array if needed
+            if end_sample > len(all_audio):
+                extra = np.zeros(end_sample - len(all_audio), dtype=np.float32)
+                all_audio = np.concatenate([all_audio, extra])
+
+            # Mix in (overwrite silence with speech)
+            all_audio[start_sample:start_sample + len(seg_audio)] = seg_audio
 
         # Write final combined audio
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_final:
