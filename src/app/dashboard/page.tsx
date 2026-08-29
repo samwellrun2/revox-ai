@@ -21,10 +21,22 @@ export default async function DashboardPage() {
 
   const { data: translations } = await supabase
     .from("translations")
-    .select("id, target_language, status, duration_seconds, created_at, source_url")
+    .select("id, target_language, status, duration_seconds, created_at, source_url, source_file_path, output_file_path")
     .eq("user_id", user!.id)
     .order("created_at", { ascending: false })
     .limit(10);
+
+  // Generate signed URLs for source videos (for thumbnails)
+  const translationsWithUrls = await Promise.all(
+    (translations ?? []).map(async (t) => {
+      let video_url: string | null = null;
+      if (t.source_file_path) {
+        const { data } = await supabase.storage.from("videos").createSignedUrl(t.source_file_path, 3600);
+        video_url = data?.signedUrl ?? null;
+      }
+      return { ...t, video_url };
+    })
+  );
 
   const tier = (subscription?.tier ?? "free") as string;
   const minutesUsed = usage?.minutes_used ?? 0;
@@ -36,7 +48,7 @@ export default async function DashboardPage() {
       tier={tier}
       minutesUsed={minutesUsed}
       minutesLimit={minutesLimit}
-      translations={translations ?? []}
+      translations={translationsWithUrls}
     />
   );
 }
