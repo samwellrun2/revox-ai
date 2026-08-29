@@ -14,10 +14,14 @@ export async function dubSegmentsWithFile(
   formData.append("language", targetLang);
   formData.append("speaker_audio", audioBlob, "source.mp3");
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 600000); // 10 min timeout
+
   const res = await fetch(`${VOICE_SERVER_URL}/clone-segments`, {
     method: "POST",
     body: formData,
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeout));
 
   if (!res.ok) {
     const error = await res.text();

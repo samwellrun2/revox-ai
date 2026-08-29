@@ -67,6 +67,20 @@ export async function processTranslation(translationId: string) {
       if (isVideoUrl(translation.source_url)) {
         // Use yt-dlp for YouTube, Vimeo, TikTok, etc.
         await downloadWithYtDlp(translation.source_url, videoPath);
+        // yt-dlp might save with different extension, check if file exists
+        const exists = await fs.access(videoPath).then(() => true).catch(() => false);
+        if (!exists) {
+          // Try common alternatives
+          const mp4Alt = videoPath.replace(".mp4", ".mp4.mp4");
+          const webmAlt = videoPath.replace(".mp4", ".webm");
+          for (const alt of [mp4Alt, webmAlt]) {
+            const altExists = await fs.access(alt).then(() => true).catch(() => false);
+            if (altExists) {
+              await fs.rename(alt, videoPath);
+              break;
+            }
+          }
+        }
       } else {
         // Direct video URL — download with fetch
         const res = await fetch(translation.source_url);
