@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 export async function GET(
   _request: Request,
@@ -25,7 +26,12 @@ export async function GET(
 
   let downloadUrl: string | null = null;
   if (translation.status === "completed" && translation.output_file_path) {
-    const { data } = await supabase.storage
+    // Use service role to generate signed URL (has full storage access)
+    const serviceClient = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data } = await serviceClient.storage
       .from("videos")
       .createSignedUrl(translation.output_file_path, 3600);
     downloadUrl = data?.signedUrl ?? null;
