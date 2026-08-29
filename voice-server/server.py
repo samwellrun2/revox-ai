@@ -156,9 +156,6 @@ async def clone_segments(
 
         # Generate each segment with pre-computed voice embedding
         for i, seg in enumerate(segment_list):
-            # Reset seed before EACH segment so voice stays consistent
-            torch.manual_seed(42)
-
             seg_start = float(seg["start"])
             seg_end = float(seg["end"])
             seg_text = seg["text"].strip()
@@ -176,12 +173,12 @@ async def clone_segments(
                 language=tts_lang,
                 gpt_cond_latent=gpt_cond_latent,
                 speaker_embedding=speaker_embedding,
-                temperature=0.65,          # Natural sounding (default is 0.75)
+                temperature=0.3,           # Low temp = consistent voice, still natural
                 length_penalty=1.0,
                 repetition_penalty=10.0,
-                top_k=50,                  # Default — natural variation
-                top_p=0.85,                # Default — natural variation
-                do_sample=True,            # Natural sampling — NOT greedy
+                top_k=20,                  # Tight — less voice variation
+                top_p=0.7,                 # Tight — keeps voice consistent
+                do_sample=True,            # Still sampling so it sounds natural
                 speed=1.0,
             )
 
