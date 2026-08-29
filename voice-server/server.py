@@ -26,11 +26,9 @@ from TTS.api import TTS
 
 app = FastAPI(title="Revox Voice Server")
 
-# Load XTTS v2 — use GPU if available (CUDA > Metal > CPU)
+# Load XTTS v2 — CUDA GPU or CPU (Metal/MPS has compatibility issues)
 if torch.cuda.is_available():
     device = "cuda"
-elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-    device = "mps"
 else:
     device = "cpu"
 print(f"Loading XTTS v2 on {device}...")
