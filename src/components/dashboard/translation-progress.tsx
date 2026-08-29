@@ -222,13 +222,26 @@ export function TranslationProgress({ id }: { id: string }) {
               })}
             </div>
 
-            {/* Download button */}
+            {/* Video player + download */}
             {data.status === "completed" && data.download_url && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-8"
+                className="mt-8 space-y-4"
               >
+                {/* Video player */}
+                <div className="rounded-card overflow-hidden border border-brand-border bg-black">
+                  <video
+                    controls
+                    className="w-full aspect-video"
+                    src={data.download_url}
+                    preload="metadata"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+
+                {/* Download button */}
                 <a
                   href={data.download_url}
                   download

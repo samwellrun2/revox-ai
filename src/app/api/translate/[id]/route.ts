@@ -33,3 +33,38 @@ export async function GET(
 
   return NextResponse.json({ ...translation, download_url: downloadUrl });
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Get translation to find file paths
+  const { data: translation } = await supabase
+    .from("translations")
+    .select("source_file_path, output_file_path")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!translation) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // Delete files from storage
+  const filesToDelete = [translation.source_file_path, translation.output_file_path].filter(Boolean) as string[];
+  if (filesToDelete.length > 0) {
+    await supabase.storage.from("videos").remove(filesToDelete);
+  }
+
+  // Delete translation record
+  await supabase.from("translations").delete().eq("id", id).eq("user_id", user.id);
+
+  return NextResponse.json({ success: true });
+}

@@ -21,7 +21,7 @@ export default async function DashboardPage() {
 
   const { data: translations } = await supabase
     .from("translations")
-    .select("id, target_language, status, duration_seconds, created_at")
+    .select("id, target_language, status, duration_seconds, created_at, source_url")
     .eq("user_id", user!.id)
     .order("created_at", { ascending: false })
     .limit(10);

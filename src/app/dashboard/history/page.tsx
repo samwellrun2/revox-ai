@@ -7,7 +7,7 @@ export default async function HistoryPage() {
 
   const { data: translations } = await supabase
     .from("translations")
-    .select("id, target_language, status, duration_seconds, created_at")
+    .select("id, target_language, status, duration_seconds, created_at, source_url")
     .eq("user_id", user!.id)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -16,7 +16,7 @@ export default async function HistoryPage() {
     <div className="max-w-4xl">
       <h1 className="text-2xl font-bold tracking-tight mb-1">History</h1>
       <p className="text-brand-muted mb-8">All your past translations.</p>
-      <RecentTranslations translations={translations ?? []} />
+      <RecentTranslations translations={translations ?? []} showDelete />
     </div>
   );
 }
