@@ -17,7 +17,8 @@ export async function mergeAudioVideo(
   await fs.writeFile(audioPath, audioBuffer);
 
   await execAsync(
-    `ffmpeg -i "${videoPath}" -i "${audioPath}" -c:v copy -map 0:v:0 -map 1:a:0 -shortest "${outputPath}"`
+    `ffmpeg -i "${videoPath}" -i "${audioPath}" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -map 0:v:0 -map 1:a:0 -shortest -movflags +faststart "${outputPath}"`,
+    { timeout: 300000, maxBuffer: 1024 * 1024 * 50 }
   );
 
   return outputPath;
