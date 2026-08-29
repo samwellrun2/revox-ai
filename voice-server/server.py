@@ -20,6 +20,8 @@ from fastapi.responses import StreamingResponse
 
 # Auto-accept XTTS license (non-commercial CPML)
 os.environ["COQUI_TOS_AGREED"] = "1"
+# Allow MPS (Metal) to fall back to CPU for unsupported ops
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 from TTS.api import TTS
 
