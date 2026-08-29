@@ -18,8 +18,8 @@ function isVideoUrl(url: string): boolean {
 async function downloadWithYtDlp(url: string, outputPath: string): Promise<void> {
   try {
     await execAsync(
-      `yt-dlp -f "best[ext=mp4]/best" --no-warnings --no-playlist -o "${outputPath}" "${url}"`,
-      { timeout: 300000, maxBuffer: 1024 * 1024 * 10 }
+      `yt-dlp -f "best" --no-warnings --no-playlist --recode-video mp4 -o "${outputPath}" "${url}"`,
+      { timeout: 300000, maxBuffer: 1024 * 1024 * 50 }
     );
   } catch (err) {
     const error = err as Error & { stderr?: string };
@@ -77,8 +77,23 @@ export async function processTranslation(translationId: string) {
       throw new Error("No source video");
     }
 
-    // Get duration
+    // Get duration and generate thumbnail
     const duration = await getVideoDuration(videoPath);
+
+    // Generate thumbnail from video
+    const thumbPath = videoPath.replace(".mp4", "-thumb.jpg");
+    try {
+      await execAsync(
+        `ffmpeg -y -i "${videoPath}" -ss 1 -vframes 1 -q:v 5 -vf scale=480:-1 "${thumbPath}"`,
+        { timeout: 10000 }
+      );
+      const thumbBuffer = await fs.readFile(thumbPath);
+      const thumbKey = `thumbnails/${translationId}.jpg`;
+      await supabase.storage.from("videos").upload(thumbKey, thumbBuffer, { contentType: "image/jpeg" });
+    } catch {
+      // Thumbnail generation is optional — don't fail the whole pipeline
+    }
+
     await updateStatus(translationId, "transcribing", { duration_seconds: Math.ceil(duration) });
 
     // Extract audio for voice cloning

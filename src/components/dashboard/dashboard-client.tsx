@@ -20,7 +20,7 @@ interface DashboardClientProps {
     duration_seconds: number | null;
     created_at: string;
     source_url?: string | null;
-    video_url?: string | null;
+    thumbnail_url?: string | null;
   }>;
 }
 

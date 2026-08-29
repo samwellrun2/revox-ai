@@ -29,12 +29,11 @@ export default async function DashboardPage() {
   // Generate signed URLs for source videos (for thumbnails)
   const translationsWithUrls = await Promise.all(
     (translations ?? []).map(async (t) => {
-      let video_url: string | null = null;
-      if (t.source_file_path) {
-        const { data } = await supabase.storage.from("videos").createSignedUrl(t.source_file_path, 3600);
-        video_url = data?.signedUrl ?? null;
-      }
-      return { ...t, video_url };
+      let thumbnail_url: string | null = null;
+      // Try to get stored thumbnail
+      const { data: thumbData } = await supabase.storage.from("videos").createSignedUrl(`thumbnails/${t.id}.jpg`, 3600);
+      thumbnail_url = thumbData?.signedUrl ?? null;
+      return { ...t, thumbnail_url };
     })
   );
 

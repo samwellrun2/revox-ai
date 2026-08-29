@@ -7,19 +7,17 @@ export default async function HistoryPage() {
 
   const { data: translations } = await supabase
     .from("translations")
-    .select("id, target_language, status, duration_seconds, created_at, source_url, source_file_path, output_file_path")
+    .select("id, target_language, status, duration_seconds, created_at, source_url")
     .eq("user_id", user!.id)
     .order("created_at", { ascending: false })
     .limit(50);
 
   const translationsWithUrls = await Promise.all(
     (translations ?? []).map(async (t) => {
-      let video_url: string | null = null;
-      if (t.source_file_path) {
-        const { data } = await supabase.storage.from("videos").createSignedUrl(t.source_file_path, 3600);
-        video_url = data?.signedUrl ?? null;
-      }
-      return { ...t, video_url };
+      let thumbnail_url: string | null = null;
+      const { data: thumbData } = await supabase.storage.from("videos").createSignedUrl(`thumbnails/${t.id}.jpg`, 3600);
+      thumbnail_url = thumbData?.signedUrl ?? null;
+      return { ...t, thumbnail_url };
     })
   );
 

@@ -12,7 +12,7 @@ interface Translation {
   duration_seconds: number | null;
   created_at: string;
   source_url?: string | null;
-  video_url?: string | null;
+  thumbnail_url?: string | null;
 }
 
 interface RecentTranslationsProps {
@@ -91,22 +91,11 @@ export function RecentTranslations({ translations, showDelete = false }: RecentT
             >
               {/* Thumbnail / preview */}
               <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-50">
-                {thumbnail ? (
+                {(thumbnail || t.thumbnail_url) ? (
                   <img
-                    src={thumbnail}
+                    src={thumbnail || t.thumbnail_url || ""}
                     alt="Video thumbnail"
                     className="w-full h-full object-cover"
-                  />
-                ) : t.video_url ? (
-                  <video
-                    src={t.video_url}
-                    className="w-full h-full object-cover"
-                    muted
-                    preload="metadata"
-                    onLoadedData={(e) => {
-                      const video = e.target as HTMLVideoElement;
-                      video.currentTime = 1;
-                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
