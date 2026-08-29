@@ -114,6 +114,18 @@ export function TranslationProgress({ id }: { id: string }) {
     ? getElapsedTime(data.created_at, data.completed_at)
     : elapsed;
 
+  // Estimate time remaining based on step and video duration
+  const videoDuration = data.duration_seconds ?? 60;
+  // Rough multiplier: processing takes ~3-5x video length on CPU
+  const estimatedTotalSeconds = videoDuration * 4;
+  const elapsedSeconds = (Date.now() - new Date(data.created_at).getTime()) / 1000;
+  const remainingSeconds = Math.max(estimatedTotalSeconds - elapsedSeconds, 10);
+  const estimatedTimeLeft = data.status === "completed" || data.status === "failed"
+    ? "—"
+    : remainingSeconds > 60
+      ? `~${Math.ceil(remainingSeconds / 60)} min`
+      : `~${Math.ceil(remainingSeconds)}s`;
+
   return (
     <div className="max-w-3xl">
       {/* Header */}
@@ -267,24 +279,25 @@ export function TranslationProgress({ id }: { id: string }) {
                 <span className="text-sm font-medium">Time</span>
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-xs text-brand-muted">Elapsed</span>
-                  <span className="text-xs font-medium">{totalTime}</span>
-                </div>
+                {data.status !== "completed" && data.status !== "failed" ? (
+                  <div className="flex justify-between">
+                    <span className="text-xs text-brand-muted">Estimated remaining</span>
+                    <span className="text-xs font-medium">{estimatedTimeLeft}</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between">
+                    <span className="text-xs text-brand-muted">Total time</span>
+                    <span className="text-xs font-medium">{totalTime}</span>
+                  </div>
+                )}
                 {data.duration_seconds && (
                   <div className="flex justify-between">
                     <span className="text-xs text-brand-muted">Video length</span>
                     <span className="text-xs font-medium">
-                      {Math.floor(data.duration_seconds / 60)}:{String(data.duration_seconds % 60).padStart(2, "0")}
+                      {Math.floor(data.duration_seconds / 60)}:{String(Math.floor(data.duration_seconds % 60)).padStart(2, "0")}
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-xs text-brand-muted">Started</span>
-                  <span className="text-xs font-medium">
-                    {new Date(data.created_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                  </span>
-                </div>
               </div>
             </div>
 
@@ -316,10 +329,6 @@ export function TranslationProgress({ id }: { id: string }) {
                   }`}>
                     {data.status}
                   </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-brand-muted">ID</span>
-                  <span className="text-xs font-mono text-brand-muted">{data.id.slice(0, 8)}</span>
                 </div>
               </div>
             </div>
