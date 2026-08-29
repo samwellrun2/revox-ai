@@ -18,7 +18,7 @@ function isVideoUrl(url: string): boolean {
 async function downloadWithYtDlp(url: string, outputPath: string): Promise<void> {
   try {
     await execAsync(
-      `yt-dlp -f "best" --no-warnings --no-playlist --recode-video mp4 -o "${outputPath}" "${url}"`,
+      `yt-dlp -f "bv*+ba/b" --no-warnings --no-playlist --merge-output-format mp4 -o "${outputPath}" "${url}"`,
       { timeout: 300000, maxBuffer: 1024 * 1024 * 50 }
     );
   } catch (err) {
