@@ -132,9 +132,13 @@ export async function processTranslation(translationId: string) {
     // Upload result
     const outputBuffer = await fs.readFile(outputPath);
     const outputKey = `outputs/${translationId}/translated.mp4`;
-    await supabase.storage.from("videos").upload(outputKey, outputBuffer, {
+    const { error: uploadError } = await supabase.storage.from("videos").upload(outputKey, outputBuffer, {
       contentType: "video/mp4",
+      upsert: true,
     });
+    if (uploadError) {
+      throw new Error(`Upload failed: ${uploadError.message}`);
+    }
 
     // Update usage
     const currentMonth = new Date().toISOString().slice(0, 7);
