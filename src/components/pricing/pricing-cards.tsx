@@ -124,11 +124,11 @@ export function PricingCards({ currentTier }: { currentTier: string }) {
               onClick={() => {
                 if (tier.plan) {
                   handleUpgrade(tier.plan);
-                } else {
+                } else if (!isCurrent) {
                   router.push("/auth");
                 }
               }}
-              disabled={isCurrent || loading !== null}
+              disabled={isCurrent || loading === tier.plan}
               className={`w-full py-2.5 rounded-xl font-medium transition-colors ${
                 tier.highlighted
                   ? "bg-brand-primary hover:bg-brand-primary-hover text-white"
