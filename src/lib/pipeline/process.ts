@@ -126,6 +126,28 @@ export async function processTranslation(translationId: string) {
     const dubbedAudio = await dubSegmentsWithFile(translatedSegments, translation.target_language, audioBuffer);
     await updateStatus(translationId, "merging");
 
+    // Generate SRT captions from translated segments
+    const srtContent = translatedSegments
+      .filter(seg => seg.text.trim())
+      .map((seg, i) => {
+        const formatTime = (seconds: number) => {
+          const h = Math.floor(seconds / 3600);
+          const m = Math.floor((seconds % 3600) / 60);
+          const s = Math.floor(seconds % 60);
+          const ms = Math.floor((seconds % 1) * 1000);
+          return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")},${String(ms).padStart(3, "0")}`;
+        };
+        return `${i + 1}\n${formatTime(seg.start)} --> ${formatTime(seg.end)}\n${seg.text.trim()}\n`;
+      })
+      .join("\n");
+
+    // Upload captions
+    const captionsKey = `outputs/${translationId}/captions.srt`;
+    await supabase.storage.from("videos").upload(captionsKey, Buffer.from(srtContent), {
+      contentType: "text/plain",
+      upsert: true,
+    });
+
     // Merge
     const outputPath = await mergeAudioVideo(videoPath, dubbedAudio);
 

@@ -25,8 +25,8 @@ export async function GET(
   }
 
   let downloadUrl: string | null = null;
+  let captionsUrl: string | null = null;
   if (translation.status === "completed" && translation.output_file_path) {
-    // Use service role to generate signed URL (has full storage access)
     const serviceClient = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -35,9 +35,16 @@ export async function GET(
       .from("videos")
       .createSignedUrl(translation.output_file_path, 3600);
     downloadUrl = data?.signedUrl ?? null;
+
+    // Captions
+    const captionsKey = translation.output_file_path.replace("translated.mp4", "captions.srt");
+    const { data: capData } = await serviceClient.storage
+      .from("videos")
+      .createSignedUrl(captionsKey, 3600);
+    captionsUrl = capData?.signedUrl ?? null;
   }
 
-  return NextResponse.json({ ...translation, download_url: downloadUrl });
+  return NextResponse.json({ ...translation, download_url: downloadUrl, captions_url: captionsUrl });
 }
 
 export async function DELETE(
