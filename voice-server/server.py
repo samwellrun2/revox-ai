@@ -195,9 +195,9 @@ async def clone_segments(
             end_sample = start_sample + len(seg_audio)
             if end_sample > len(all_audio):
                 all_audio = np.concatenate([all_audio, np.zeros(end_sample - len(all_audio), dtype=np.float32)])
-        all_audio[start_sample:start_sample + len(audio_with_gaps)] = audio_with_gaps
+            all_audio[start_sample:start_sample + len(seg_audio)] = seg_audio
 
-        print(f"[clone-segments] Done. Total audio: {len(all_audio)/output_sr:.1f}s")
+        print(f"[clone-segments] Done. Total audio: {len(all_audio)/sample_rate:.1f}s")
 
         # Write final combined audio
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_final:
