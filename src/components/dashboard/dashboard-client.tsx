@@ -36,8 +36,6 @@ export function DashboardClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState("");
-  const [addCaptions, setAddCaptions] = useState(true);
-  const [removeOriginalSubs, setRemoveOriginalSubs] = useState(true);
   const router = useRouter();
 
   const hasSource = file !== null || url !== "";
@@ -49,8 +47,6 @@ export function DashboardClient({
 
     const formData = new FormData();
     formData.append("target_language", selectedLang);
-    formData.append("add_captions", addCaptions ? "true" : "false");
-    formData.append("remove_original_subs", removeOriginalSubs ? "true" : "false");
     if (file) {
       formData.append("file", file);
     } else {
@@ -121,39 +117,6 @@ export function DashboardClient({
             onChange={setSelectedLang}
             tier={tier}
           />
-
-          {/* Caption options */}
-          <div className="p-4 rounded-xl border border-brand-border bg-white space-y-3">
-            <p className="text-sm font-medium">Caption options</p>
-            <label className="flex items-center justify-between cursor-pointer group">
-              <div className="flex items-center gap-2.5">
-                <svg className="w-4 h-4 text-brand-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-                </svg>
-                <span className="text-sm">Add translated captions</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={addCaptions}
-                onChange={(e) => setAddCaptions(e.target.checked)}
-                className="w-4 h-4 rounded border-brand-border text-brand-primary focus:ring-brand-primary/20"
-              />
-            </label>
-            <label className="flex items-center justify-between cursor-pointer group">
-              <div className="flex items-center gap-2.5">
-                <svg className="w-4 h-4 text-brand-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                </svg>
-                <span className="text-sm">Remove original subtitles</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={removeOriginalSubs}
-                onChange={(e) => setRemoveOriginalSubs(e.target.checked)}
-                className="w-4 h-4 rounded border-brand-border text-brand-primary focus:ring-brand-primary/20"
-              />
-            </label>
-          </div>
 
           <button
             onClick={handleTranslate}

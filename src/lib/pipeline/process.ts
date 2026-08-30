@@ -154,28 +154,8 @@ export async function processTranslation(translationId: string, options: Process
       upsert: true,
     });
 
-    // Remove original embedded subtitles from source video if requested
-    if (removeOriginalSubs) {
-      try {
-        const strippedPath = videoPath.replace(".mp4", "-nosubs.mp4");
-        await execAsync(
-          `ffmpeg -y -i "${videoPath}" -map 0:v -map 0:a -sn -c copy "${strippedPath}"`,
-          { timeout: 60000 }
-        );
-        // Replace original with stripped version
-        await fs.unlink(videoPath);
-        await fs.rename(strippedPath, videoPath);
-      } catch {
-        // If stripping fails (no subs to strip), continue with original
-      }
-    }
-
-    // Merge — burn in translated captions only if requested
-    const outputPath = await mergeAudioVideo(
-      videoPath,
-      dubbedAudio,
-      addCaptions ? srtContent : undefined
-    );
+    // Merge — no burned-in captions (captions available as separate SRT download)
+    const outputPath = await mergeAudioVideo(videoPath, dubbedAudio);
 
     // Upload result
     const outputBuffer = await fs.readFile(outputPath);
