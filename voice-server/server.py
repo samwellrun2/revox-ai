@@ -143,8 +143,10 @@ async def clone_segments(
     all_audio = np.zeros(total_samples, dtype=np.float32)
 
     try:
-        # Compute voice embedding ONCE from the FULL speaker audio
-        print(f"[clone-segments] Computing voice embedding from {speaker_path}")
+        # Voice anchoring: generate first segment from original speaker,
+        # then use our OWN output as reference for all following segments.
+        # This makes the model match itself = consistent voice.
+        print(f"[clone-segments] Computing initial voice embedding from {speaker_path}")
         xtts_model = tts.synthesizer.tts_model
         gpt_cond_latent, speaker_embedding = xtts_model.get_conditioning_latents(
             audio_path=[speaker_path],
@@ -152,10 +154,10 @@ async def clone_segments(
             gpt_cond_chunk_len=4,
             max_ref_length=60,
         )
-        print(f"[clone-segments] Voice embedding computed. Processing {len(segment_list)} segments")
 
-        # Per-segment generation with shared embedding + low temperature for consistency
-        # This preserves pauses while keeping voice similar across segments
+        anchor_path = None  # Will hold our generated "anchor" audio
+        print(f"[clone-segments] Processing {len(segment_list)} segments with voice anchoring")
+
         for i, seg in enumerate(segment_list):
             seg_start = float(seg["start"])
             seg_end = float(seg["end"])
@@ -167,16 +169,26 @@ async def clone_segments(
 
             print(f"[clone-segments] Segment {i+1}/{len(segment_list)}: '{seg_text[:50]}' ({target_duration:.1f}s)")
 
+            # After first segment, re-compute embedding from our own generated audio
+            # This "anchors" the voice to our output, not the noisy original
+            if anchor_path and i > 0:
+                gpt_cond_latent, speaker_embedding = xtts_model.get_conditioning_latents(
+                    audio_path=[anchor_path],
+                    gpt_cond_len=30,
+                    gpt_cond_chunk_len=4,
+                    max_ref_length=60,
+                )
+
             result = xtts_model.inference(
                 text=seg_text,
                 language=tts_lang,
                 gpt_cond_latent=gpt_cond_latent,
                 speaker_embedding=speaker_embedding,
-                temperature=0.35,
+                temperature=0.5,
                 length_penalty=1.0,
                 repetition_penalty=10.0,
-                top_k=30,
-                top_p=0.8,
+                top_k=50,
+                top_p=0.85,
                 do_sample=True,
                 speed=1.0,
             )
@@ -184,6 +196,11 @@ async def clone_segments(
             seg_audio = np.array(result["wav"], dtype=np.float32)
             if len(seg_audio.shape) > 1:
                 seg_audio = seg_audio[:, 0]
+
+            # Save first segment as anchor for all following segments
+            if anchor_path is None:
+                anchor_path = speaker_path.replace(".wav", "_anchor.wav")
+                sf.write(anchor_path, seg_audio, output_sr)
 
             # Time-stretch to fit original segment timing
             generated_duration = len(seg_audio) / output_sr
