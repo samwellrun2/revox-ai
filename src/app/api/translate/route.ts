@@ -15,6 +15,8 @@ export async function POST(request: Request) {
   const targetLanguage = formData.get("target_language") as string;
   const file = formData.get("file") as File | null;
   const url = formData.get("url") as string | null;
+  const addCaptions = formData.get("add_captions") === "true";
+  const removeOriginalSubs = formData.get("remove_original_subs") === "true";
 
   if (!targetLanguage) {
     return NextResponse.json({ error: "Target language required" }, { status: 400 });
@@ -83,7 +85,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create translation" }, { status: 500 });
   }
 
-  processTranslation(translation.id).catch(console.error);
+  processTranslation(translation.id, { addCaptions, removeOriginalSubs }).catch(console.error);
 
   return NextResponse.json({ id: translation.id });
 }
