@@ -142,60 +142,56 @@ async def clone_segments(
     all_audio = np.zeros(total_samples, dtype=np.float32)
 
     try:
-        # Simple approach: tts.tts_to_file per segment — this is what sounded good originally
-        print(f"[clone-segments] Processing {len(segment_list)} segments using tts_to_file")
+        # ONE generation with ALL text — one voice, then fit to timeline
+        valid_segs = [seg for seg in segment_list if seg["text"].strip() and float(seg["end"]) - float(seg["start"]) > 0]
+        combined_text = " ".join(seg["text"].strip() for seg in valid_segs)
 
-        for i, seg in enumerate(segment_list):
-            seg_start = float(seg["start"])
-            seg_end = float(seg["end"])
-            seg_text = seg["text"].strip()
-            target_duration = seg_end - seg_start
+        print(f"[clone-segments] Generating ONE audio: {len(combined_text)} chars, {len(valid_segs)} segments")
 
-            if not seg_text or target_duration <= 0:
-                continue
+        # Use the high-level tts_to_file — the one that sounded good
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_out:
+            combined_output = tmp_out.name
 
-            print(f"[clone-segments] Segment {i+1}/{len(segment_list)}: '{seg_text[:50]}' ({target_duration:.1f}s)")
+        tts.tts_to_file(
+            text=combined_text,
+            speaker_wav=speaker_path,
+            language=tts_lang,
+            file_path=combined_output,
+        )
 
-            # Use the high-level API — same as original working version
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_out:
-                seg_output = tmp_out.name
+        combined_audio, sr = sf.read(combined_output)
+        if len(combined_audio.shape) > 1:
+            combined_audio = combined_audio[:, 0]
+        combined_audio = combined_audio.astype(np.float32)
+        os.unlink(combined_output)
 
-            tts.tts_to_file(
-                text=seg_text,
-                speaker_wav=speaker_path,
-                language=tts_lang,
-                file_path=seg_output,
-            )
+        gen_duration = len(combined_audio) / sr
+        first_start = float(valid_segs[0]["start"])
+        last_end = float(valid_segs[-1]["end"])
+        target_total = last_end - first_start
 
-            seg_audio, sr = sf.read(seg_output)
-            if len(seg_audio.shape) > 1:
-                seg_audio = seg_audio[:, 0]
-            seg_audio = seg_audio.astype(np.float32)
+        print(f"[clone-segments] Generated {gen_duration:.1f}s, target {target_total:.1f}s")
 
-            # Resample to 22050 if needed
-            if sr != sample_rate:
-                import torchaudio
-                seg_tensor = torch.from_numpy(seg_audio).float().unsqueeze(0)
-                resampled = torchaudio.functional.resample(seg_tensor, sr, sample_rate)
-                seg_audio = resampled.squeeze().numpy()
+        # Time-stretch to fit the speech window
+        if target_total > 0 and gen_duration > 0:
+            target_samples_total = int(target_total * sr)
+            original_indices = np.arange(len(combined_audio))
+            target_indices = np.linspace(0, len(combined_audio) - 1, target_samples_total)
+            combined_audio = np.interp(target_indices, original_indices, combined_audio).astype(np.float32)
 
-            os.unlink(seg_output)
+        # Resample to output sample rate if needed
+        if sr != sample_rate:
+            import torchaudio
+            t = torch.from_numpy(combined_audio).float().unsqueeze(0)
+            resampled = torchaudio.functional.resample(t, sr, sample_rate)
+            combined_audio = resampled.squeeze().numpy()
 
-            # Time-stretch to fit original timing
-            target_samples_seg = int(target_duration * sample_rate)
-            if len(seg_audio) > 0 and target_samples_seg > 0:
-                ratio = len(seg_audio) / sample_rate / target_duration
-                if ratio < 0.85 or ratio > 1.15:
-                    original_indices = np.arange(len(seg_audio))
-                    target_indices = np.linspace(0, len(seg_audio) - 1, target_samples_seg)
-                    seg_audio = np.interp(target_indices, original_indices, seg_audio).astype(np.float32)
-
-            # Place at exact timestamp
-            start_sample = int(seg_start * sample_rate)
-            end_sample = start_sample + len(seg_audio)
-            if end_sample > len(all_audio):
-                all_audio = np.concatenate([all_audio, np.zeros(end_sample - len(all_audio), dtype=np.float32)])
-            all_audio[start_sample:start_sample + len(seg_audio)] = seg_audio
+        # Place at first segment start
+        start_sample = int(first_start * sample_rate)
+        end_sample = start_sample + len(combined_audio)
+        if end_sample > len(all_audio):
+            all_audio = np.concatenate([all_audio, np.zeros(end_sample - len(all_audio), dtype=np.float32)])
+        all_audio[start_sample:start_sample + len(combined_audio)] = combined_audio
 
         print(f"[clone-segments] Done. Total audio: {len(all_audio)/sample_rate:.1f}s")
 
