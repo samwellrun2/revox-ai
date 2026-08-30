@@ -1,8 +1,8 @@
 export const TIER_LIMITS = {
-  free: { minutesPerMonth: 3, maxVideoSeconds: 120, languages: 5, watermark: true, priority: false },
-  pro: { minutesPerMonth: 30, maxVideoSeconds: 900, languages: 999, watermark: false, priority: false },
-  business: { minutesPerMonth: 120, maxVideoSeconds: 3600, languages: 999, watermark: false, priority: true },
-  enterprise: { minutesPerMonth: 500, maxVideoSeconds: Infinity, languages: 999, watermark: false, priority: true },
+  free: { minutesPerMonth: 3, maxVideoSeconds: 60, languages: 5, watermark: true, priority: false },
+  pro: { minutesPerMonth: 30, maxVideoSeconds: 180, languages: 999, watermark: false, priority: false },
+  business: { minutesPerMonth: 120, maxVideoSeconds: 300, languages: 999, watermark: false, priority: true },
+  enterprise: { minutesPerMonth: 500, maxVideoSeconds: 600, languages: 999, watermark: false, priority: true },
 } as const;
 
 export type Tier = keyof typeof TIER_LIMITS;
