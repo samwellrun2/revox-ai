@@ -256,27 +256,43 @@ export function TranslationProgress({ id }: { id: string }) {
 
                 {/* Download buttons */}
                 <div className="flex flex-wrap gap-3">
-                  <a
-                    href={data.download_url}
-                    download
+                  <button
+                    onClick={async () => {
+                      const res = await fetch(data.download_url!);
+                      const blob = await res.blob();
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `translated-${data.target_language}.mp4`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold transition-colors shadow-lg shadow-brand-primary/25"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
                     Download video
-                  </a>
+                  </button>
                   {data.captions_url && (
-                    <a
-                      href={data.captions_url}
-                      download="captions.srt"
+                    <button
+                      onClick={async () => {
+                        const res = await fetch(data.captions_url!);
+                        const blob = await res.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `captions-${data.target_language}.srt`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
                       className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-brand-border hover:bg-gray-50 font-medium transition-colors"
                     >
                       <svg className="w-5 h-5 text-brand-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
                       </svg>
                       Download captions (SRT)
-                    </a>
+                    </button>
                   )}
                 </div>
               </motion.div>

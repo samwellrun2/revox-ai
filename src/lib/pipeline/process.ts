@@ -148,8 +148,8 @@ export async function processTranslation(translationId: string) {
       upsert: true,
     });
 
-    // Merge
-    const outputPath = await mergeAudioVideo(videoPath, dubbedAudio);
+    // Merge with burned-in captions
+    const outputPath = await mergeAudioVideo(videoPath, dubbedAudio, srtContent);
 
     // Upload result
     const outputBuffer = await fs.readFile(outputPath);

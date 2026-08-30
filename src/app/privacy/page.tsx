@@ -31,6 +31,7 @@ export default function PrivacyPage() {
 
             <h2 className="text-lg font-semibold text-brand-text">3. Video Data</h2>
             <p>Videos you upload are processed using third-party AI services (OpenAI for transcription and translation). Your videos are stored temporarily in our secure cloud storage during processing and are available for download after completion. We do not use your videos to train AI models.</p>
+            <p>Translated captions (SRT files) are generated automatically from the translated text and burned into the output video. Caption files are also available for separate download and are stored alongside your translated videos.</p>
 
             <h2 className="text-lg font-semibold text-brand-text">4. Third-Party Services</h2>
             <p>We use the following third-party services:</p>

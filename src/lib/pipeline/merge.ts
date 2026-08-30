@@ -8,7 +8,8 @@ const execAsync = promisify(exec);
 
 export async function mergeAudioVideo(
   videoPath: string,
-  audioBuffer: Buffer
+  audioBuffer: Buffer,
+  srtContent?: string
 ): Promise<string> {
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "revox-"));
   const audioPath = path.join(tmpDir, "dubbed.mp3");
@@ -16,16 +17,26 @@ export async function mergeAudioVideo(
 
   await fs.writeFile(audioPath, audioBuffer);
 
+  // If captions provided, burn them into the video
+  let subtitleFilter = "";
+  if (srtContent) {
+    const srtPath = path.join(tmpDir, "captions.srt");
+    await fs.writeFile(srtPath, srtContent);
+    // Escape path for ffmpeg filter
+    const escaped = srtPath.replace(/'/g, "'\\''").replace(/:/g, "\\:");
+    subtitleFilter = `-vf "subtitles='${escaped}':force_style='FontSize=18,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,Outline=2,Shadow=1'"`;
+  }
+
   try {
     await execAsync(
-      `ffmpeg -y -i "${videoPath}" -i "${audioPath}" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -map 0:v:0 -map 1:a:0 -shortest -movflags +faststart "${outputPath}"`,
-      { timeout: 300000, maxBuffer: 1024 * 1024 * 50 }
+      `ffmpeg -y -i "${videoPath}" -i "${audioPath}" ${subtitleFilter ? subtitleFilter : "-c:v libx264 -preset fast -crf 23"} ${subtitleFilter ? "-c:v libx264 -preset fast -crf 23" : ""} -c:a aac -b:a 128k -map 0:v:0 -map 1:a:0 -shortest -movflags +faststart "${outputPath}"`,
+      { timeout: 600000, maxBuffer: 1024 * 1024 * 50 }
     );
   } catch {
-    // Fallback: copy video codec if H.264 encoding fails
+    // Fallback without captions
     await execAsync(
-      `ffmpeg -y -i "${videoPath}" -i "${audioPath}" -c:v copy -c:a aac -b:a 128k -map 0:v:0 -map 1:a:0 -shortest -movflags +faststart "${outputPath}"`,
-      { timeout: 300000, maxBuffer: 1024 * 1024 * 50 }
+      `ffmpeg -y -i "${videoPath}" -i "${audioPath}" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -map 0:v:0 -map 1:a:0 -shortest -movflags +faststart "${outputPath}"`,
+      { timeout: 600000, maxBuffer: 1024 * 1024 * 50 }
     );
   }
 
