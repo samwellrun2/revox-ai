@@ -14,6 +14,13 @@ const tiers = [
       "Up to 2 min videos",
       "5 languages",
       "Voice cloning",
+      "Standard processing",
+    ],
+    excluded: [
+      "Translated captions",
+      "Priority queue",
+      "Multiple translations at once",
+      "Download transcript",
     ],
     cta: "Get started",
     plan: null,
@@ -29,6 +36,12 @@ const tiers = [
       "Up to 15 min videos",
       "50+ languages",
       "Voice cloning",
+      "Translated captions (SRT)",
+      "Priority queue",
+      "Download transcript",
+    ],
+    excluded: [
+      "Multiple translations at once",
     ],
     cta: "Upgrade to Pro",
     plan: "pro" as const,
@@ -44,7 +57,12 @@ const tiers = [
       "Up to 60 min videos",
       "50+ languages",
       "Voice cloning",
+      "Translated captions (SRT)",
+      "Priority queue",
+      "3 translations at once",
+      "Download transcript",
     ],
+    excluded: [],
     cta: "Upgrade to Business",
     plan: "business" as const,
     highlighted: false,
@@ -59,7 +77,13 @@ const tiers = [
       "Unlimited video length",
       "50+ languages",
       "Voice cloning",
+      "Translated captions (SRT)",
+      "Priority queue",
+      "10 translations at once",
+      "Download transcript",
+      "Batch upload",
     ],
+    excluded: [],
     cta: "Upgrade to Enterprise",
     plan: "enterprise" as const,
     highlighted: false,
@@ -115,6 +139,14 @@ export function PricingCards({ currentTier }: { currentTier: string }) {
                 <li key={f} className="flex items-center gap-2 text-sm">
                   <svg className="w-4 h-4 text-brand-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  {f}
+                </li>
+              ))}
+              {tier.excluded.map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm text-brand-muted/60">
+                  <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                   {f}
                 </li>
