@@ -165,20 +165,6 @@ async def clone_segments(
         combined_audio = combined_audio.astype(np.float32)
         os.unlink(combined_output)
 
-        gen_duration = len(combined_audio) / sr
-        first_start = float(valid_segs[0]["start"])
-        last_end = float(valid_segs[-1]["end"])
-        target_total = last_end - first_start
-
-        print(f"[clone-segments] Generated {gen_duration:.1f}s, target {target_total:.1f}s")
-
-        # Time-stretch to fit the speech window
-        if target_total > 0 and gen_duration > 0:
-            target_samples_total = int(target_total * sr)
-            original_indices = np.arange(len(combined_audio))
-            target_indices = np.linspace(0, len(combined_audio) - 1, target_samples_total)
-            combined_audio = np.interp(target_indices, original_indices, combined_audio).astype(np.float32)
-
         # Resample to output sample rate if needed
         if sr != sample_rate:
             import torchaudio
@@ -186,12 +172,54 @@ async def clone_segments(
             resampled = torchaudio.functional.resample(t, sr, sample_rate)
             combined_audio = resampled.squeeze().numpy()
 
+        gen_duration = len(combined_audio) / sample_rate
+        first_start = float(valid_segs[0]["start"])
+        last_end = float(valid_segs[-1]["end"])
+
+        # Find gaps between segments
+        gaps = []
+        for i in range(1, len(valid_segs)):
+            gap_duration = float(valid_segs[i]["start"]) - float(valid_segs[i-1]["end"])
+            if gap_duration > 0.1:
+                chars_before = sum(len(valid_segs[j]["text"].strip()) for j in range(i))
+                gaps.append({"after_chars": chars_before, "duration": gap_duration})
+
+        # Split audio at gap positions and insert silence
+        total_chars = len(combined_text)
+        pieces = []
+        prev_pos = 0
+        for gap in gaps:
+            char_pos = gap["after_chars"]
+            start_frac = prev_pos / total_chars
+            end_frac = char_pos / total_chars
+            s = int(start_frac * len(combined_audio))
+            e = int(end_frac * len(combined_audio))
+            pieces.append(combined_audio[s:e])
+            pieces.append(np.zeros(int(gap["duration"] * sample_rate), dtype=np.float32))
+            prev_pos = char_pos
+        # Last piece
+        s = int(prev_pos / total_chars * len(combined_audio))
+        pieces.append(combined_audio[s:])
+
+        final_audio = np.concatenate(pieces) if pieces else combined_audio
+        final_duration = len(final_audio) / sample_rate
+
+        # Time-stretch to match original total duration
+        target_total = last_end - first_start
+        print(f"[clone-segments] With gaps: {final_duration:.1f}s, target: {target_total:.1f}s")
+
+        if target_total > 0 and final_duration > 0:
+            target_samples_total = int(target_total * sample_rate)
+            original_indices = np.arange(len(final_audio))
+            target_indices = np.linspace(0, len(final_audio) - 1, target_samples_total)
+            final_audio = np.interp(target_indices, original_indices, final_audio).astype(np.float32)
+
         # Place at first segment start
         start_sample = int(first_start * sample_rate)
-        end_sample = start_sample + len(combined_audio)
+        end_sample = start_sample + len(final_audio)
         if end_sample > len(all_audio):
             all_audio = np.concatenate([all_audio, np.zeros(end_sample - len(all_audio), dtype=np.float32)])
-        all_audio[start_sample:start_sample + len(combined_audio)] = combined_audio
+        all_audio[start_sample:start_sample + len(final_audio)] = final_audio
 
         print(f"[clone-segments] Done. Total audio: {len(all_audio)/sample_rate:.1f}s")
 
