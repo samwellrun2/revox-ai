@@ -10,11 +10,10 @@ const tiers = [
     period: "forever",
     description: "Try it out",
     features: [
-      "3 minutes / month",
+      "2 minutes / month",
       "Up to 1 min videos",
       "5 languages",
       "Voice cloning",
-      "Translated captions",
     ],
     excluded: [],
     cta: "Get started",

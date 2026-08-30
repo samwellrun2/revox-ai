@@ -39,7 +39,7 @@ export default async function DashboardPage() {
 
   const tier = (subscription?.tier ?? "free") as string;
   const minutesUsed = usage?.minutes_used ?? 0;
-  const limits: Record<string, number> = { free: 3, pro: 30, business: 120, enterprise: 500 };
+  const limits: Record<string, number> = { free: 2, pro: 30, business: 120, enterprise: 500 };
   const minutesLimit = limits[tier] ?? 3;
 
   return (
