@@ -58,9 +58,10 @@ export async function POST(request: Request) {
     mode: "subscription",
     line_items: [{ price: PLANS[plan].priceId, quantity: 1 }],
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?upgraded=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/upgrade`,
     metadata: { supabase_user_id: user.id, plan },
-  });
+    managed_payments: { enabled: false },
+  } as Record<string, unknown>);
 
   return NextResponse.json({ url: session.url });
 }
