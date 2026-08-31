@@ -80,13 +80,22 @@ export function PricingCards({ currentTier }: { currentTier: string }) {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ plan }),
       });
-      if (!res.ok && res.status === 401) {
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        alert("Server error. Please try again.");
+        setLoading("");
+        return;
+      }
+      if (res.status === 401) {
         router.push("/auth");
         return;
       }
-      const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
