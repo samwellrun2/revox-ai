@@ -8,7 +8,6 @@ interface AccountSettingsProps {
   tier: string;
   minutesUsed: number;
   minutesLimit: number;
-  stripeSubscriptionId: string | null;
 }
 
 export function AccountSettings({
@@ -16,7 +15,6 @@ export function AccountSettings({
   tier,
   minutesUsed,
   minutesLimit,
-  stripeSubscriptionId,
 }: AccountSettingsProps) {
   const router = useRouter();
   const supabase = createClient();

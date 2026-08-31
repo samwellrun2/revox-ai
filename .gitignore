@@ -7,3 +7,4 @@ voice-server/__pycache__
 .superpowers
 *.pyc
 .python-version
+.vercel

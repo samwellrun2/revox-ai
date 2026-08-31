@@ -28,7 +28,6 @@ export default async function SettingsPage() {
       tier={tier}
       minutesUsed={usage?.minutes_used ?? 0}
       minutesLimit={TIER_LIMITS[tier].minutesPerMonth}
-      stripeSubscriptionId={subscription?.stripe_subscription_id ?? null}
     />
   );
 }

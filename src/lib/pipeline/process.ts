@@ -65,7 +65,8 @@ interface ProcessOptions {
   removeOriginalSubs?: boolean;
 }
 
-export async function processTranslation(translationId: string, _options: ProcessOptions = {}) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function processTranslation(translationId: string, options: ProcessOptions = {}) {
   const { data: translation } = await supabase
     .from("translations")
     .select("*")
