@@ -63,14 +63,39 @@ export function AccountSettings({
       <div className="p-6 rounded-card border border-brand-border bg-white space-y-4">
         <h2 className="font-semibold">Subscription</h2>
         {tier !== "free" ? (
-          <p className="text-sm text-brand-muted">
-            You&apos;re on the <span className="font-medium text-brand-text capitalize">{tier}</span> plan.
-            {stripeSubscriptionId && " Manage your billing through the Stripe customer portal."}
-          </p>
+          <>
+            <p className="text-sm text-brand-muted">
+              You&apos;re on the <span className="font-medium text-brand-text capitalize">{tier}</span> plan.
+            </p>
+            <div className="flex gap-3">
+              <a
+                href="/dashboard/upgrade"
+                className="px-4 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white text-sm font-medium transition-colors"
+              >
+                Change plan
+              </a>
+              <button
+                onClick={async () => {
+                  if (!confirm("Are you sure you want to cancel your subscription? You'll keep access until the end of your billing period.")) return;
+                  const res = await fetch("/api/stripe/cancel", { method: "POST" });
+                  const data = await res.json();
+                  if (data.success) {
+                    alert("Subscription cancelled. You'll keep access until the end of your billing period.");
+                    router.refresh();
+                  } else {
+                    alert(data.error ?? "Something went wrong");
+                  }
+                }}
+                className="px-4 py-2 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 text-sm font-medium transition-colors"
+              >
+                Cancel subscription
+              </button>
+            </div>
+          </>
         ) : (
           <p className="text-sm text-brand-muted">
             You&apos;re on the free plan.{" "}
-            <a href="/pricing" className="text-brand-primary font-medium hover:underline">
+            <a href="/dashboard/upgrade" className="text-brand-primary font-medium hover:underline">
               Upgrade
             </a>{" "}
             for more minutes and features.
