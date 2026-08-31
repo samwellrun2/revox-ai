@@ -76,16 +76,26 @@ export function PricingCards({ currentTier }: { currentTier: string }) {
 
   async function handleUpgrade(plan: string) {
     setLoading(plan);
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan }),
-    });
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      alert(data.error ?? "Something went wrong");
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      if (!res.ok && res.status === 401) {
+        router.push("/auth");
+        return;
+      }
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error ?? "Something went wrong");
+      }
+    } catch {
+      alert("Please sign in first to upgrade.");
+      router.push("/auth");
+    } finally {
       setLoading("");
     }
   }
