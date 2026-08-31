@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { AccountSettings } from "@/components/settings/account-settings";
 import { TIER_LIMITS, type Tier } from "@/lib/tier-limits";

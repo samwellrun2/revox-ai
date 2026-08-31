@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { RecentTranslations } from "@/components/dashboard/recent-translations";
 
