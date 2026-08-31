@@ -36,10 +36,29 @@ export function DashboardClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState("");
+  const [durationError, setDurationError] = useState("");
   const router = useRouter();
 
+  const maxSeconds: Record<string, number> = { free: 60, pro: 180, business: 300, enterprise: 600 };
+  const maxSec = maxSeconds[tier] ?? 60;
+
   const hasSource = file !== null || url !== "";
-  const canTranslate = hasSource && selectedLang !== "" && !isSubmitting;
+  const canTranslate = hasSource && selectedLang !== "" && !isSubmitting && !durationError;
+
+  function checkVideoDuration(videoFile: File) {
+    setDurationError("");
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(video.src);
+      if (video.duration > maxSec) {
+        setDurationError(
+          `Video is ${Math.ceil(video.duration / 60)} min — your ${tier} plan allows up to ${Math.ceil(maxSec / 60)} min. Upgrade for longer videos.`
+        );
+      }
+    };
+    video.src = URL.createObjectURL(videoFile);
+  }
 
   async function handleTranslate() {
     if (!canTranslate) return;
@@ -84,10 +103,13 @@ export function DashboardClient({
             onFileSelect={(f) => {
               setFile(f);
               setUrl("");
+              setDurationError("");
+              checkVideoDuration(f);
             }}
             onUrlSubmit={(u) => {
               setUrl(u);
               setFile(null);
+              setDurationError("");
             }}
           />
 
@@ -108,6 +130,21 @@ export function DashboardClient({
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
+              </button>
+            </div>
+          )}
+
+          {durationError && (
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+              <p className="text-sm text-red-600 font-medium mb-2">{durationError}</p>
+              <button
+                onClick={() => {
+                  setUpgradeReason(durationError);
+                  setShowUpgrade(true);
+                }}
+                className="text-sm text-brand-primary font-medium hover:underline"
+              >
+                Upgrade your plan &rarr;
               </button>
             </div>
           )}
