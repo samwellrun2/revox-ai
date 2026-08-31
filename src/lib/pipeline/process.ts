@@ -16,6 +16,26 @@ function isVideoUrl(url: string): boolean {
   return /youtube\.com|youtu\.be|vimeo\.com|tiktok\.com|twitter\.com|x\.com|instagram\.com/i.test(url);
 }
 
+function isInternalUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    return (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "0.0.0.0" ||
+      host.startsWith("10.") ||
+      host.startsWith("172.") ||
+      host.startsWith("192.168.") ||
+      host.startsWith("169.254.") ||
+      host.endsWith(".local") ||
+      parsed.protocol === "file:"
+    );
+  } catch {
+    return true;
+  }
+}
+
 async function downloadWithYtDlp(url: string, outputPath: string): Promise<void> {
   try {
     await execAsync(
@@ -45,8 +65,7 @@ interface ProcessOptions {
   removeOriginalSubs?: boolean;
 }
 
-export async function processTranslation(translationId: string, options: ProcessOptions = {}) {
-  const { addCaptions = true, removeOriginalSubs = true } = options;
+export async function processTranslation(translationId: string, _options: ProcessOptions = {}) {
   const { data: translation } = await supabase
     .from("translations")
     .select("*")
@@ -68,6 +87,11 @@ export async function processTranslation(translationId: string, options: Process
       videoPath = path.join(tmpDir, "source.mp4");
       await fs.writeFile(videoPath, Buffer.from(await data.arrayBuffer()));
     } else if (translation.source_url) {
+      // Block internal/private URLs (SSRF protection)
+      if (isInternalUrl(translation.source_url)) {
+        throw new Error("Invalid URL. Please provide a public video URL.");
+      }
+
       const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "revox-src-"));
       videoPath = path.join(tmpDir, "source.mp4");
 

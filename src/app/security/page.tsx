@@ -21,9 +21,8 @@ export default function SecurityPage() {
 
             <h2 className="text-lg font-semibold text-brand-text">Authentication Security</h2>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Passwords are hashed using bcrypt — we never store plaintext passwords</li>
+              <li>Sign-in via Google OAuth 2.0 — no passwords stored on our servers</li>
               <li>Sessions use secure JWT tokens with expiration</li>
-              <li>OAuth sign-in (Google) uses industry-standard OAuth 2.0 protocol</li>
               <li>Row-Level Security (RLS) ensures users can only access their own data</li>
             </ul>
 

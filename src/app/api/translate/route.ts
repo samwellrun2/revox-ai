@@ -4,6 +4,9 @@ import { canTranslate, type Tier } from "@/lib/tier-limits";
 import { FREE_LANGUAGES } from "@/lib/constants/languages";
 import { processTranslation } from "@/lib/pipeline/process";
 
+export const maxDuration = 300; // 5 min timeout for serverless
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
