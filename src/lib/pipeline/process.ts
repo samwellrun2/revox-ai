@@ -3,6 +3,7 @@ import { transcribe } from "./transcribe";
 import { translateSegments } from "./translate";
 import { dubSegmentsWithFile } from "./dub";
 import { mergeAudioVideo, getVideoDuration, extractAudio } from "./merge";
+import { TIER_LIMITS, type Tier } from "../tier-limits";
 import { exec } from "child_process";
 import { promisify } from "util";
 import fs from "fs/promises";
@@ -97,8 +98,22 @@ export async function processTranslation(translationId: string, options: Process
       throw new Error("No source video");
     }
 
-    // Get duration and generate thumbnail
+    // Get duration and check tier limits
     const duration = await getVideoDuration(videoPath);
+
+    // Enforce video length limit based on user's tier
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("tier")
+      .eq("user_id", translation.user_id)
+      .single();
+
+    const tier = (subscription?.tier ?? "free") as Tier;
+    const limits = TIER_LIMITS[tier];
+
+    if (duration > limits.maxVideoSeconds) {
+      throw new Error(`Video is ${Math.ceil(duration / 60)} min — your ${tier} plan allows up to ${Math.ceil(limits.maxVideoSeconds / 60)} min. Please upgrade.`);
+    }
 
     // Generate thumbnail from video
     const thumbPath = videoPath.replace(".mp4", "-thumb.jpg");
