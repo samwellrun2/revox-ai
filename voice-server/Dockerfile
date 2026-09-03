@@ -11,7 +11,8 @@ WORKDIR /app
 # Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir fastapi uvicorn python-multipart soundfile numpy
+RUN pip install --no-cache-dir fastapi uvicorn python-multipart soundfile "numpy<2.0.0"
+RUN pip install --no-cache-dir "transformers==4.40.0"
 
 # Copy server code
 COPY server.py .
